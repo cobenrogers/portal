@@ -39,10 +39,12 @@ export function WidgetWrapper({
                 e.preventDefault()
                 onRefresh()
               }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
               disabled={isLoading}
-              className="p-1.5 hover:bg-gray-200"
+              className="p-1.5 hover:bg-gray-200 relative z-10"
             >
-              <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
+              <RefreshCw className={cn('w-4 h-4 pointer-events-none', isLoading && 'animate-spin')} />
             </Button>
           )}
           {onSettings && (
@@ -55,9 +57,11 @@ export function WidgetWrapper({
                 e.preventDefault()
                 onSettings()
               }}
-              className="p-1.5 hover:bg-gray-200"
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="p-1.5 hover:bg-gray-200 relative z-10"
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="w-4 h-4 pointer-events-none" />
             </Button>
           )}
         </div>
