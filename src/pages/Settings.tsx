@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { ArrowLeft, Plus, Trash2, Save, Lock, Unlock, Search, MapPin, Loader2 } from 'lucide-react'
 import { Button, Input, Select, Card, CardHeader, CardTitle, CardContent } from '@/components/ui'
 import { getSettings, saveSettings, verifyPin, searchLocations } from '@/services/api'
+import { useTheme } from '@/hooks'
 import { generateId, cn } from '@/lib/utils'
 import type {
   PortalSettings,
@@ -10,6 +11,7 @@ import type {
   NewsWidgetSettings,
   WeatherWidgetSettings,
   CalendarWidgetSettings,
+  StockWidgetSettings,
   GeoLocation,
 } from '@/types'
 
@@ -22,6 +24,7 @@ const WIDGET_TYPES: { value: WidgetType; label: string }[] = [
   { value: 'news', label: 'News Feed' },
   { value: 'weather', label: 'Weather' },
   { value: 'calendar', label: 'Calendar' },
+  { value: 'stocks', label: 'Stock Ticker' },
 ]
 
 const PRESET_FEEDS = [
@@ -80,6 +83,12 @@ function getDefaultWidgetSettings(type: WidgetType): WidgetConfig['settings'] {
         calendarUrl: '',
         daysToShow: 7,
       } as CalendarWidgetSettings
+    case 'stocks':
+      return {
+        widgetName: 'Stocks',
+        symbols: ['AAPL', 'GOOGL', 'MSFT', 'AMZN'],
+        refreshInterval: 2,
+      } as StockWidgetSettings
   }
 }
 
@@ -91,6 +100,9 @@ export function Settings({ onBack, onSave }: SettingsProps) {
   const [pin, setPin] = useState('')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [pinError, setPinError] = useState<string | null>(null)
+
+  // Apply theme (needed since Settings page renders independently)
+  useTheme(settings?.theme ?? 'light')
 
   useEffect(() => {
     async function loadSettings() {
@@ -148,17 +160,22 @@ export function Settings({ onBack, onSave }: SettingsProps) {
       settings: getDefaultWidgetSettings(type),
     }
 
-    // Add to layout at a default position
-    const newLayoutItem = { i: id, x: 0, y: Infinity, w: 3, h: 3 }
+    // Calculate next y position based on existing widgets
+    // Find the max y value in each layout and add 1
+    const getNextY = (layout: typeof settings.dashboardLayout.layouts.lg) => {
+      if (layout.length === 0) return 0
+      const maxY = Math.max(...layout.map(item => item.y ?? 0))
+      return maxY + 1
+    }
 
     setSettings({
       ...settings,
       dashboardLayout: {
         ...settings.dashboardLayout,
         layouts: {
-          lg: [...settings.dashboardLayout.layouts.lg, newLayoutItem],
-          md: [...settings.dashboardLayout.layouts.md, newLayoutItem],
-          sm: [...settings.dashboardLayout.layouts.sm, newLayoutItem],
+          lg: [...settings.dashboardLayout.layouts.lg, { i: id, x: 0, y: getNextY(settings.dashboardLayout.layouts.lg), w: 3, h: 3 }],
+          md: [...settings.dashboardLayout.layouts.md, { i: id, x: 0, y: getNextY(settings.dashboardLayout.layouts.md), w: 3, h: 3 }],
+          sm: [...settings.dashboardLayout.layouts.sm, { i: id, x: 0, y: getNextY(settings.dashboardLayout.layouts.sm), w: 3, h: 3 }],
         },
         widgets: [...settings.dashboardLayout.widgets, newWidget],
       },
@@ -203,7 +220,7 @@ export function Settings({ onBack, onSave }: SettingsProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
       </div>
     )
@@ -211,7 +228,7 @@ export function Settings({ onBack, onSave }: SettingsProps) {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4">
         <Card className="w-full max-w-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -245,18 +262,18 @@ export function Settings({ onBack, onSave }: SettingsProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-10">
+      <header className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
           >
             <ArrowLeft className="w-5 h-5" />
             Back
           </button>
-          <h1 className="text-lg font-semibold">Portal Settings</h1>
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Portal Settings</h1>
           <Button onClick={handleSave} disabled={isSaving} size="sm">
             <Save className="w-4 h-4 mr-2" />
             {isSaving ? 'Saving...' : 'Save'}
@@ -266,11 +283,11 @@ export function Settings({ onBack, onSave }: SettingsProps) {
 
       <main className="max-w-4xl mx-auto p-4 space-y-6">
         {error && (
-          <div className="bg-red-50 text-red-700 p-4 rounded-lg">{error}</div>
+          <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 p-4 rounded-lg">{error}</div>
         )}
 
         {/* Auth status */}
-        <div className="flex items-center gap-2 text-sm text-green-600">
+        <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
           <Unlock className="w-4 h-4" />
           Authenticated
         </div>
@@ -312,7 +329,7 @@ export function Settings({ onBack, onSave }: SettingsProps) {
               />
             ))}
             {settings?.dashboardLayout.widgets.length === 0 && (
-              <p className="text-gray-500 text-sm text-center py-4">
+              <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">
                 No widgets configured. Add one above.
               </p>
             )}
@@ -357,7 +374,7 @@ function WidgetEditor({
   const [isExpanded, setIsExpanded] = useState(false)
 
   return (
-    <div className="border rounded-lg p-4">
+    <div className="border dark:border-gray-700 rounded-lg p-4">
       <div className="flex items-center justify-between">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
@@ -368,25 +385,28 @@ function WidgetEditor({
               'w-2 h-2 rounded-full',
               widget.type === 'news' && 'bg-blue-500',
               widget.type === 'weather' && 'bg-yellow-500',
-              widget.type === 'calendar' && 'bg-green-500'
+              widget.type === 'calendar' && 'bg-green-500',
+              widget.type === 'stocks' && 'bg-purple-500'
             )}
           />
-          <span className="font-medium">
+          <span className="font-medium text-gray-900 dark:text-gray-100">
             {widget.type === 'news'
               ? (widget.settings as NewsWidgetSettings).feedName
               : widget.type === 'weather'
               ? (widget.settings as WeatherWidgetSettings).location
-              : (widget.settings as CalendarWidgetSettings).calendarName || 'Calendar'}
+              : widget.type === 'calendar'
+              ? (widget.settings as CalendarWidgetSettings).calendarName || 'Calendar'
+              : (widget.settings as StockWidgetSettings).widgetName || 'Stocks'}
           </span>
-          <span className="text-xs text-gray-500 uppercase">{widget.type}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 uppercase">{widget.type}</span>
         </button>
-        <Button variant="ghost" size="sm" onClick={onRemove} className="text-red-600">
+        <Button variant="ghost" size="sm" onClick={onRemove} className="text-red-600 dark:text-red-400">
           <Trash2 className="w-4 h-4" />
         </Button>
       </div>
 
       {isExpanded && (
-        <div className="mt-4 pt-4 border-t space-y-4">
+        <div className="mt-4 pt-4 border-t dark:border-gray-700 space-y-4">
           {widget.type === 'news' && (
             <NewsWidgetEditor
               settings={widget.settings as NewsWidgetSettings}
@@ -402,6 +422,12 @@ function WidgetEditor({
           {widget.type === 'calendar' && (
             <CalendarWidgetEditor
               settings={widget.settings as CalendarWidgetSettings}
+              onUpdate={onUpdate}
+            />
+          )}
+          {widget.type === 'stocks' && (
+            <StockWidgetEditor
+              settings={widget.settings as StockWidgetSettings}
               onUpdate={onUpdate}
             />
           )}
@@ -424,10 +450,10 @@ function NewsWidgetEditor({
   return (
     <>
       <div className="space-y-3">
-        <label className="text-sm font-medium">Preset Feeds</label>
+        <label className="text-sm font-medium text-gray-900 dark:text-gray-100">Preset Feeds</label>
         {FEED_CATEGORIES.map((category) => (
           <div key={category}>
-            <p className="text-xs text-gray-500 mb-1">{category}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{category}</p>
             <div className="flex flex-wrap gap-1">
               {PRESET_FEEDS.filter((f) => f.category === category).map((feed) => (
                 <button
@@ -436,8 +462,8 @@ function NewsWidgetEditor({
                   className={cn(
                     'px-2 py-1 text-xs rounded border',
                     settings.feedUrl === feed.url
-                      ? 'bg-blue-100 border-blue-500 text-blue-700'
-                      : 'hover:bg-gray-100'
+                      ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-300'
+                      : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                   )}
                 >
                   {feed.name}
@@ -551,24 +577,24 @@ function WeatherWidgetEditor({
     <>
       {/* Current Location Display */}
       {settings.location && (
-        <div className="flex items-center gap-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-          <MapPin className="w-4 h-4 text-yellow-600 flex-shrink-0" />
-          <span className="text-sm font-medium text-yellow-800">{settings.location}</span>
+        <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-700">
+          <MapPin className="w-4 h-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+          <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">{settings.location}</span>
         </div>
       )}
 
       {/* Location Search */}
       <div ref={containerRef} className="relative">
-        <label className="text-sm font-medium block mb-1">Search Location</label>
+        <label className="text-sm font-medium text-gray-900 dark:text-gray-100 block mb-1">Search Location</label>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => searchResults.length > 0 && setShowResults(true)}
             placeholder="Search for a city..."
-            className="w-full pl-10 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+            className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
           />
           {isSearching && (
             <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
@@ -577,17 +603,17 @@ function WeatherWidgetEditor({
 
         {/* Search Results Dropdown */}
         {showResults && searchResults.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-64 overflow-y-auto">
+          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-lg max-h-64 overflow-y-auto">
             {searchResults.map((location) => (
               <button
                 key={location.id}
                 onClick={() => selectLocation(location)}
-                className="w-full px-4 py-3 text-left hover:bg-yellow-50 border-b last:border-b-0 flex items-start gap-3"
+                className="w-full px-4 py-3 text-left hover:bg-yellow-50 dark:hover:bg-yellow-900/20 border-b dark:border-gray-700 last:border-b-0 flex items-start gap-3"
               >
-                <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <div className="font-medium text-gray-900">{location.name}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="font-medium text-gray-900 dark:text-gray-100">{location.name}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
                     {[location.admin1, location.country].filter(Boolean).join(', ')}
                   </div>
                 </div>
@@ -598,7 +624,7 @@ function WeatherWidgetEditor({
 
         {/* No results message */}
         {showResults && searchQuery && searchResults.length === 0 && !isSearching && (
-          <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg p-4 text-sm text-gray-500 text-center">
+          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-lg p-4 text-sm text-gray-500 dark:text-gray-400 text-center">
             No locations found for "{searchQuery}"
           </div>
         )}
@@ -613,7 +639,7 @@ function WeatherWidgetEditor({
           { value: 'metric', label: 'Metric (°C, km/h)' },
         ]}
       />
-      <label className="flex items-center gap-2">
+      <label className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
         <input
           type="checkbox"
           checked={settings.showForecast}
@@ -654,6 +680,169 @@ function CalendarWidgetEditor({
         onChange={(e) => onUpdate({ daysToShow: parseInt(e.target.value) || 7 })}
         min={1}
         max={30}
+      />
+    </>
+  )
+}
+
+const POPULAR_STOCKS = [
+  { symbol: 'AAPL', name: 'Apple' },
+  { symbol: 'GOOGL', name: 'Google' },
+  { symbol: 'MSFT', name: 'Microsoft' },
+  { symbol: 'AMZN', name: 'Amazon' },
+  { symbol: 'META', name: 'Meta' },
+  { symbol: 'NVDA', name: 'NVIDIA' },
+  { symbol: 'TSLA', name: 'Tesla' },
+  { symbol: 'JPM', name: 'JPMorgan' },
+  { symbol: 'V', name: 'Visa' },
+  { symbol: 'JNJ', name: 'Johnson & Johnson' },
+  { symbol: 'WMT', name: 'Walmart' },
+  { symbol: 'DIS', name: 'Disney' },
+]
+
+const INDEX_FUNDS = [
+  { symbol: 'SPY', name: 'S&P 500 ETF' },
+  { symbol: 'QQQ', name: 'Nasdaq 100 ETF' },
+  { symbol: 'DIA', name: 'Dow Jones ETF' },
+  { symbol: 'IWM', name: 'Russell 2000 ETF' },
+  { symbol: 'VTI', name: 'Total Market ETF' },
+]
+
+function StockWidgetEditor({
+  settings,
+  onUpdate,
+}: {
+  settings: StockWidgetSettings
+  onUpdate: (s: Partial<StockWidgetSettings>) => void
+}) {
+  const [newSymbol, setNewSymbol] = useState('')
+
+  const addSymbol = (symbol: string) => {
+    const upperSymbol = symbol.toUpperCase().trim()
+    if (upperSymbol && !settings.symbols.includes(upperSymbol)) {
+      onUpdate({ symbols: [...settings.symbols, upperSymbol] })
+    }
+    setNewSymbol('')
+  }
+
+  const removeSymbol = (symbol: string) => {
+    onUpdate({ symbols: settings.symbols.filter((s) => s !== symbol) })
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      addSymbol(newSymbol)
+    }
+  }
+
+  return (
+    <>
+      <Input
+        label="Widget Name"
+        value={settings.widgetName || ''}
+        onChange={(e) => onUpdate({ widgetName: e.target.value })}
+        placeholder="e.g., My Watchlist"
+      />
+
+      {/* Current Symbols */}
+      <div>
+        <label className="text-sm font-medium text-gray-900 dark:text-gray-100 block mb-2">
+          Symbols ({settings.symbols.length}/10)
+        </label>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {settings.symbols.map((symbol) => (
+            <span
+              key={symbol}
+              className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-sm"
+            >
+              {symbol}
+              <button
+                onClick={() => removeSymbol(symbol)}
+                className="text-purple-500 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-200"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+          {settings.symbols.length === 0 && (
+            <span className="text-gray-400 dark:text-gray-500 text-sm">No symbols added</span>
+          )}
+        </div>
+      </div>
+
+      {/* Add Custom Symbol */}
+      <div className="flex gap-2">
+        <Input
+          value={newSymbol}
+          onChange={(e) => setNewSymbol(e.target.value.toUpperCase())}
+          onKeyDown={handleKeyDown}
+          placeholder="Enter symbol (e.g., AAPL)"
+          className="flex-1"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => addSymbol(newSymbol)}
+          disabled={!newSymbol.trim() || settings.symbols.length >= 10}
+        >
+          Add
+        </Button>
+      </div>
+
+      {/* Quick Add - Popular Stocks */}
+      <div>
+        <label className="text-sm font-medium text-gray-900 dark:text-gray-100 block mb-1">Popular Stocks</label>
+        <div className="flex flex-wrap gap-1">
+          {POPULAR_STOCKS.map((stock) => (
+            <button
+              key={stock.symbol}
+              onClick={() => addSymbol(stock.symbol)}
+              disabled={settings.symbols.includes(stock.symbol) || settings.symbols.length >= 10}
+              className={cn(
+                'px-2 py-1 text-xs rounded border',
+                settings.symbols.includes(stock.symbol)
+                  ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-700 dark:text-purple-300'
+                  : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50'
+              )}
+              title={stock.name}
+            >
+              {stock.symbol}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Quick Add - Index Funds */}
+      <div>
+        <label className="text-sm font-medium text-gray-900 dark:text-gray-100 block mb-1">Index Funds/ETFs</label>
+        <div className="flex flex-wrap gap-1">
+          {INDEX_FUNDS.map((stock) => (
+            <button
+              key={stock.symbol}
+              onClick={() => addSymbol(stock.symbol)}
+              disabled={settings.symbols.includes(stock.symbol) || settings.symbols.length >= 10}
+              className={cn(
+                'px-2 py-1 text-xs rounded border',
+                settings.symbols.includes(stock.symbol)
+                  ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-700 dark:text-purple-300'
+                  : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50'
+              )}
+              title={stock.name}
+            >
+              {stock.symbol}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <Input
+        label="Refresh Interval (minutes)"
+        type="number"
+        value={settings.refreshInterval}
+        onChange={(e) => onUpdate({ refreshInterval: parseInt(e.target.value) || 2 })}
+        min={1}
+        max={60}
       />
     </>
   )

@@ -25,7 +25,7 @@ export function WidgetWrapper({
     <Card className={cn('h-full flex flex-col', className)}>
       <CardHeader className="flex flex-row items-center justify-between py-2 px-3">
         <div className="flex items-center gap-2">
-          <GripVertical className="w-4 h-4 text-gray-400 cursor-grab" />
+          <GripVertical className="w-4 h-4 text-gray-400 dark:text-gray-500 cursor-grab" />
           <CardTitle>{title}</CardTitle>
         </div>
         <div className="flex items-center gap-1">
@@ -42,7 +42,7 @@ export function WidgetWrapper({
               onMouseDown={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
               disabled={isLoading}
-              className="p-1.5 hover:bg-gray-200 relative z-10"
+              className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 relative z-10"
             >
               <RefreshCw className={cn('w-4 h-4 pointer-events-none', isLoading && 'animate-spin')} />
             </Button>
@@ -59,7 +59,7 @@ export function WidgetWrapper({
               }}
               onMouseDown={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
-              className="p-1.5 hover:bg-gray-200 relative z-10"
+              className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 relative z-10"
             >
               <Settings className="w-4 h-4 pointer-events-none" />
             </Button>
@@ -68,7 +68,7 @@ export function WidgetWrapper({
       </CardHeader>
       <CardContent className="flex-1 overflow-auto p-3">
         {error ? (
-          <div className="text-red-600 text-sm p-2 bg-red-50 rounded">
+          <div className="text-red-600 dark:text-red-400 text-sm p-2 bg-red-50 dark:bg-red-900/20 rounded">
             {error}
           </div>
         ) : (

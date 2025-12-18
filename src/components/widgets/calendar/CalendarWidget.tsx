@@ -99,8 +99,8 @@ export function CalendarWidget({ settings, onSettingsClick }: CalendarWidgetProp
       onSettings={onSettingsClick}
     >
       {!settings.calendarUrl ? (
-        <div className="text-gray-500 text-sm text-center py-4">
-          <CalendarIcon className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+        <div className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">
+          <CalendarIcon className="w-8 h-8 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
           <p>No calendar configured</p>
           <p className="text-xs mt-1">Add an iCal URL in settings</p>
         </div>
@@ -108,14 +108,14 @@ export function CalendarWidget({ settings, onSettingsClick }: CalendarWidgetProp
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="animate-pulse">
-              <div className="h-3 bg-gray-200 rounded w-20 mb-2" />
-              <div className="h-4 bg-gray-100 rounded w-full" />
+              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20 mb-2" />
+              <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded w-full" />
             </div>
           ))}
         </div>
       ) : events.length === 0 ? (
-        <div className="text-gray-500 text-sm text-center py-4">
-          <CalendarIcon className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+        <div className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">
+          <CalendarIcon className="w-8 h-8 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
           <p>No upcoming events</p>
         </div>
       ) : (
@@ -125,7 +125,7 @@ export function CalendarWidget({ settings, onSettingsClick }: CalendarWidgetProp
               <p
                 className={cn(
                   'text-xs font-semibold mb-2',
-                  date === 'Today' ? 'text-blue-600' : 'text-gray-500'
+                  date === 'Today' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
                 )}
               >
                 {date}
@@ -137,12 +137,12 @@ export function CalendarWidget({ settings, onSettingsClick }: CalendarWidgetProp
                     className={cn(
                       'text-sm p-2 rounded border-l-2',
                       isToday(event.start)
-                        ? 'bg-blue-50 border-blue-500'
-                        : 'bg-gray-50 border-gray-300'
+                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500'
+                        : 'bg-gray-50 dark:bg-gray-700/50 border-gray-300 dark:border-gray-600'
                     )}
                   >
-                    <p className="font-medium text-gray-900">{event.title}</p>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                    <p className="font-medium text-gray-900 dark:text-gray-100">{event.title}</p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {formatEventTime(event.start, event.end, event.allDay)}

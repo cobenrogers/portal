@@ -4,13 +4,13 @@
 
 ### Features
 - [x] **GitHub Actions deployment**: Set up automated deployment to Bluehost via GitHub Actions
-- [ ] **Dark mode implementation**: Theme selector exists but dark mode styles not fully applied
+- [x] **Dark mode implementation**: Full dark mode with theme selector (light/dark/system) and Tailwind CSS dark variants
 - [ ] **Widget resize**: Allow widgets to span multiple columns for larger displays
 - [ ] **Error recovery**: Better handling when feed/API fails (cached fallback data)
 - [ ] **Offline support**: Service worker for basic offline functionality
 
 ### Bugs
-- [ ] **Widget refresh button not working**: Refresh/settings buttons in widget headers don't respond to clicks in production (works in dev). Possibly related to drag-and-drop event handling or minification issue.
+- [x] **Widget refresh button not working**: Fixed by adding pointer-events-none to icons and stopPropagation on mousedown/pointerdown events.
 - [ ] **Feed image loading**: Some feeds have images that fail to load (CDN issues, hotlink protection)
 - [ ] **Calendar timezone handling**: Ensure events display in user's local timezone correctly
 
@@ -33,7 +33,7 @@
 ## Low Priority
 
 ### New Widget Types
-- [ ] **Stock ticker widget**: Display stock prices and daily changes for configurable list of symbols (consider free APIs: Alpha Vantage, Finnhub, Yahoo Finance)
+- [x] **Stock ticker widget**: Display stock prices and daily changes using Yahoo Finance API
 - [ ] **Bookmarks widget**: Quick links to favorite sites
 - [ ] **Todo widget**: Simple task list with local storage
 - [ ] **Notes widget**: Sticky note style quick notes

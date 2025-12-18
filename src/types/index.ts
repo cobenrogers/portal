@@ -1,4 +1,4 @@
-export type WidgetType = 'news' | 'weather' | 'calendar'
+export type WidgetType = 'news' | 'weather' | 'calendar' | 'stocks'
 
 // Layout item type (replaces react-grid-layout Layout)
 export interface LayoutItem {
@@ -16,7 +16,7 @@ export interface WidgetConfig {
   settings: WidgetSettings
 }
 
-export type WidgetSettings = NewsWidgetSettings | WeatherWidgetSettings | CalendarWidgetSettings
+export type WidgetSettings = NewsWidgetSettings | WeatherWidgetSettings | CalendarWidgetSettings | StockWidgetSettings
 
 export interface NewsWidgetSettings {
   feedUrl: string
@@ -37,6 +37,12 @@ export interface CalendarWidgetSettings {
   calendarName: string
   calendarUrl?: string // iCal URL
   daysToShow: number
+}
+
+export interface StockWidgetSettings {
+  widgetName: string
+  symbols: string[] // Array of stock symbols (e.g., ['AAPL', 'GOOGL', 'MSFT'])
+  refreshInterval: number // minutes
 }
 
 export interface DashboardLayout {
@@ -106,6 +112,27 @@ export interface GeoLocation {
   country: string
   admin1: string // State/Province
   admin2: string // County
+}
+
+// Stock types
+export interface StockQuote {
+  symbol: string
+  name: string
+  price: number
+  change: number
+  changePercent: number
+  previousClose: number | null
+  dayHigh: number | null
+  dayLow: number | null
+  volume: number | null
+  marketState: string
+  exchange: string | null
+}
+
+export interface StockResponse {
+  quotes: StockQuote[]
+  errors: string[]
+  timestamp: string
 }
 
 // API response types

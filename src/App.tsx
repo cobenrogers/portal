@@ -4,6 +4,7 @@ import { Dashboard } from './components/Dashboard'
 import { Settings } from './pages/Settings'
 import { Button, Input } from './components/ui'
 import { getSettings, saveSettings, verifyPin } from './services/api'
+import { useTheme } from './hooks'
 import type { PortalSettings, DashboardLayout } from './types'
 
 type Page = 'dashboard' | 'settings'
@@ -19,6 +20,9 @@ function App() {
   const [pinError, setPinError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const layoutChanged = useRef(false)
+
+  // Apply theme when settings change
+  useTheme(settings?.theme ?? 'light')
 
   useEffect(() => {
     async function loadSettings() {
@@ -93,10 +97,10 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-gray-600">Loading Portal...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading Portal...</p>
         </div>
       </div>
     )
@@ -104,8 +108,8 @@ function App() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <div className="bg-red-50 text-red-700 p-6 rounded-lg max-w-md">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4">
+        <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 p-6 rounded-lg max-w-md">
           <h2 className="font-semibold mb-2">Error Loading Portal</h2>
           <p>{error}</p>
           <Button
@@ -130,11 +134,11 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-20">
+      <header className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">Portal</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Portal</h1>
           <div className="flex items-center gap-2">
             {isEditing ? (
               <Button
@@ -169,7 +173,7 @@ function App() {
       {/* Dashboard */}
       <main className="max-w-7xl mx-auto p-4">
         {isEditing && (
-          <div className="mb-4 p-3 bg-blue-50 text-blue-700 rounded-lg text-sm">
+          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg text-sm">
             Drag widgets to reposition them. Resize from the bottom-right corner.
           </div>
         )}
@@ -185,9 +189,9 @@ function App() {
       {/* PIN Modal for saving layout */}
       {showPinModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
-            <h2 className="text-lg font-semibold mb-4">Save Layout Changes</h2>
-            <p className="text-sm text-gray-600 mb-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-sm w-full p-6">
+            <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Save Layout Changes</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Enter your PIN to save the new widget layout.
             </p>
             <Input

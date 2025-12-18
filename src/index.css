@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* Dark mode support via Tailwind's dark class */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* React Grid Layout styles */
 .react-grid-layout {
   position: relative;

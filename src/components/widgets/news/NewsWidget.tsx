@@ -52,7 +52,7 @@ export function NewsWidget({ settings, onSettingsClick }: NewsWidgetProps) {
         <div className="space-y-2">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="animate-pulse">
-              <div className="h-3 bg-gray-200 rounded w-3/4" />
+              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
             </div>
           ))}
         </div>
@@ -77,9 +77,9 @@ export function NewsWidget({ settings, onSettingsClick }: NewsWidgetProps) {
                     }}
                   />
                 ) : (
-                  <span className="text-gray-400 mt-0.5 flex-shrink-0">•</span>
+                  <span className="text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0">•</span>
                 )}
-                <span className="text-xs font-medium text-gray-900 group-hover:text-blue-600 leading-tight">
+                <span className="text-xs font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 leading-tight">
                   {truncateText(item.title, 80)}
                 </span>
               </a>

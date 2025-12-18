@@ -72,10 +72,10 @@ export function WeatherWidget({ settings, onSettingsClick }: WeatherWidgetProps)
       {isLoading && !weather ? (
         <div className="animate-pulse space-y-4">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-gray-200 rounded-full" />
-            <div className="h-10 bg-gray-200 rounded w-20" />
+            <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full" />
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-20" />
           </div>
-          <div className="h-4 bg-gray-100 rounded w-32" />
+          <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded w-32" />
         </div>
       ) : weather ? (
         <div className="space-y-4">
@@ -83,20 +83,20 @@ export function WeatherWidget({ settings, onSettingsClick }: WeatherWidgetProps)
           <div className="flex items-center gap-4">
             <Icon className="w-16 h-16 text-blue-500" />
             <div>
-              <p className="text-4xl font-bold text-gray-900">
+              <p className="text-4xl font-bold text-gray-900 dark:text-gray-100">
                 {Math.round(weather.temperature)}{tempUnit}
               </p>
-              <p className="text-sm text-gray-500 capitalize">{weather.description}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{weather.description}</p>
             </div>
           </div>
 
           {/* Details */}
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center gap-2 text-gray-600">
+            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               <Droplets className="w-4 h-4" />
               <span>{weather.humidity}% humidity</span>
             </div>
-            <div className="flex items-center gap-2 text-gray-600">
+            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               <Wind className="w-4 h-4" />
               <span>{weather.windSpeed} {speedUnit}</span>
             </div>
@@ -104,18 +104,18 @@ export function WeatherWidget({ settings, onSettingsClick }: WeatherWidgetProps)
 
           {/* Forecast */}
           {settings.showForecast && weather.forecast && weather.forecast.length > 0 && (
-            <div className="border-t pt-3 mt-3">
-              <p className="text-xs font-medium text-gray-500 mb-2">Forecast</p>
+            <div className="border-t dark:border-gray-700 pt-3 mt-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Forecast</p>
               <div className="grid grid-cols-3 gap-2">
                 {weather.forecast.slice(0, 3).map((day) => {
                   const DayIcon = getWeatherIcon(day.description)
                   return (
                     <div key={day.date} className="text-center">
-                      <p className="text-xs text-gray-500">{day.date}</p>
-                      <DayIcon className="w-6 h-6 mx-auto text-gray-400 my-1" />
-                      <p className="text-xs">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{day.date}</p>
+                      <DayIcon className="w-6 h-6 mx-auto text-gray-400 dark:text-gray-500 my-1" />
+                      <p className="text-xs text-gray-900 dark:text-gray-100">
                         <span className="font-medium">{Math.round(day.high)}°</span>
-                        <span className="text-gray-400"> / {Math.round(day.low)}°</span>
+                        <span className="text-gray-400 dark:text-gray-500"> / {Math.round(day.low)}°</span>
                       </p>
                     </div>
                   )

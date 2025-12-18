@@ -1,4 +1,4 @@
-import type { ApiResponse, FeedResponse, WeatherData, CalendarEvent, PortalSettings, GeoLocation } from '@/types'
+import type { ApiResponse, FeedResponse, WeatherData, CalendarEvent, PortalSettings, GeoLocation, StockResponse } from '@/types'
 
 // Use relative path for subdirectory deployment - resolves to /portal/api/ in production
 const API_BASE = import.meta.env.DEV ? '/api' : './api'
@@ -100,4 +100,18 @@ export async function searchLocations(query: string): Promise<GeoLocation[]> {
     throw new Error(response.error || 'Failed to search locations')
   }
   return response.data || []
+}
+
+// Stock API
+export async function fetchStockQuotes(symbols: string[]): Promise<StockResponse> {
+  if (symbols.length === 0) {
+    return { quotes: [], errors: [], timestamp: new Date().toISOString() }
+  }
+  const response = await fetchApi<ApiResponse<StockResponse>>(
+    `/feeds/stocks.php?symbols=${encodeURIComponent(symbols.join(','))}`
+  )
+  if (!response.success || !response.data) {
+    throw new Error(response.error || 'Failed to fetch stock quotes')
+  }
+  return response.data
 }

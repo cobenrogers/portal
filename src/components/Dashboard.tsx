@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useState, useRef, useEffect } from 'react'
-import { NewsWidget, WeatherWidget, CalendarWidget } from './widgets'
+import { NewsWidget, WeatherWidget, CalendarWidget, StockWidget } from './widgets'
 import { cn } from '@/lib/utils'
 import type {
   WidgetConfig,
@@ -7,6 +7,7 @@ import type {
   NewsWidgetSettings,
   WeatherWidgetSettings,
   CalendarWidgetSettings,
+  StockWidgetSettings,
 } from '@/types'
 
 interface DashboardProps {
@@ -44,12 +45,15 @@ export function Dashboard({
   const currentLayout = layout.layouts[breakpoint]
 
   // Sort widgets by position (y first, then x)
+  // Handle null/undefined y values by treating them as max value (end of list)
   const sortedWidgets = useMemo(() => {
     const widgetMap = new Map(layout.widgets.map((w) => [w.id, w]))
     return [...currentLayout]
       .sort((a, b) => {
-        if (a.y !== b.y) return a.y - b.y
-        return a.x - b.x
+        const ay = a.y ?? Number.MAX_SAFE_INTEGER
+        const by = b.y ?? Number.MAX_SAFE_INTEGER
+        if (ay !== by) return ay - by
+        return (a.x ?? 0) - (b.x ?? 0)
       })
       .map((l) => ({ layout: l, widget: widgetMap.get(l.i)! }))
       .filter((item) => item.widget)
@@ -125,6 +129,13 @@ export function Dashboard({
           return (
             <CalendarWidget
               settings={widget.settings as CalendarWidgetSettings}
+              onSettingsClick={handleSettings}
+            />
+          )
+        case 'stocks':
+          return (
+            <StockWidget
+              settings={widget.settings as StockWidgetSettings}
               onSettingsClick={handleSettings}
             />
           )
