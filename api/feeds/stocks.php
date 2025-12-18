@@ -22,10 +22,11 @@ if (empty($symbolsParam)) {
 }
 
 // Parse and validate symbols (limit to 10 to prevent abuse)
+// Allow: regular symbols (AAPL), indices (^GSPC), crypto (BTC-USD)
 $symbols = array_slice(
     array_filter(
         array_map('trim', explode(',', strtoupper($symbolsParam))),
-        fn($s) => preg_match('/^[A-Z]{1,5}$/', $s)
+        fn($s) => preg_match('/^[\^]?[A-Z0-9\-\.]{1,10}$/', $s)
     ),
     0,
     10

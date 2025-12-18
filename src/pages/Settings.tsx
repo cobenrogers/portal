@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ArrowLeft, Plus, Trash2, Save, Unlock, Search, MapPin, Loader2 } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Save, Unlock, Search, MapPin, Loader2, GripVertical } from 'lucide-react'
 import { Button, Input, Select, Card, CardHeader, CardTitle, CardContent } from '@/components/ui'
-import { getSettings, saveSettings, searchLocations } from '@/services/api'
+import { getSettings, saveSettings, searchLocations, searchStockSymbols } from '@/services/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/hooks'
 import { generateId, cn } from '@/lib/utils'
@@ -14,6 +14,7 @@ import type {
   CalendarWidgetSettings,
   StockWidgetSettings,
   GeoLocation,
+  StockSearchResult,
 } from '@/types'
 
 interface SettingsProps {
@@ -677,10 +678,15 @@ const POPULAR_STOCKS = [
 
 const INDEX_FUNDS = [
   { symbol: 'SPY', name: 'S&P 500 ETF' },
+  { symbol: '^GSPC', name: 'S&P 500 Index' },
   { symbol: 'QQQ', name: 'Nasdaq 100 ETF' },
+  { symbol: '^IXIC', name: 'NASDAQ Composite' },
   { symbol: 'DIA', name: 'Dow Jones ETF' },
+  { symbol: '^DJI', name: 'Dow Jones Index' },
   { symbol: 'IWM', name: 'Russell 2000 ETF' },
   { symbol: 'VTI', name: 'Total Market ETF' },
+  { symbol: 'BTC-USD', name: 'Bitcoin USD' },
+  { symbol: 'ETH-USD', name: 'Ethereum USD' },
 ]
 
 function StockWidgetEditor({
@@ -690,14 +696,65 @@ function StockWidgetEditor({
   settings: StockWidgetSettings
   onUpdate: (s: Partial<StockWidgetSettings>) => void
 }) {
-  const [newSymbol, setNewSymbol] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<StockSearchResult[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [showResults, setShowResults] = useState(false)
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+
+  // Debounced search
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+
+    if (!searchQuery.trim()) {
+      setSearchResults([])
+      setShowResults(false)
+      return
+    }
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      setIsSearching(true)
+      try {
+        const results = await searchStockSymbols(searchQuery)
+        setSearchResults(results)
+        setShowResults(true)
+      } catch {
+        setSearchResults([])
+      } finally {
+        setIsSearching(false)
+      }
+    }, 300)
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+    }
+  }, [searchQuery])
+
+  // Click outside to close results
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowResults(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const addSymbol = (symbol: string) => {
     const upperSymbol = symbol.toUpperCase().trim()
-    if (upperSymbol && !settings.symbols.includes(upperSymbol)) {
+    if (upperSymbol && !settings.symbols.includes(upperSymbol) && settings.symbols.length < 10) {
       onUpdate({ symbols: [...settings.symbols, upperSymbol] })
     }
-    setNewSymbol('')
+    setSearchQuery('')
+    setShowResults(false)
   }
 
   const removeSymbol = (symbol: string) => {
@@ -705,10 +762,45 @@ function StockWidgetEditor({
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && searchQuery.trim()) {
       e.preventDefault()
-      addSymbol(newSymbol)
+      // If there are search results, add the first one; otherwise add the query as-is
+      if (searchResults.length > 0) {
+        addSymbol(searchResults[0].symbol)
+      } else {
+        addSymbol(searchQuery)
+      }
     }
+  }
+
+  // Drag and drop handlers
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index)
+  }
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    setDragOverIndex(index)
+  }
+
+  const handleDragEnd = () => {
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+      const newSymbols = [...settings.symbols]
+      const [removed] = newSymbols.splice(draggedIndex, 1)
+      newSymbols.splice(dragOverIndex, 0, removed)
+      onUpdate({ symbols: newSymbols })
+    }
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }
+
+  const moveSymbol = (fromIndex: number, direction: 'up' | 'down') => {
+    const toIndex = direction === 'up' ? fromIndex - 1 : fromIndex + 1
+    if (toIndex < 0 || toIndex >= settings.symbols.length) return
+    const newSymbols = [...settings.symbols]
+    const [removed] = newSymbols.splice(fromIndex, 1)
+    newSymbols.splice(toIndex, 0, removed)
+    onUpdate({ symbols: newSymbols })
   }
 
   return (
@@ -720,25 +812,58 @@ function StockWidgetEditor({
         placeholder="e.g., My Watchlist"
       />
 
-      {/* Current Symbols */}
+      {/* Current Symbols - Reorderable */}
       <div>
         <label className="text-sm font-medium text-gray-900 dark:text-gray-100 block mb-2">
-          Symbols ({settings.symbols.length}/10)
+          Symbols ({settings.symbols.length}/10) - Drag to reorder
         </label>
-        <div className="flex flex-wrap gap-2 mb-3">
-          {settings.symbols.map((symbol) => (
-            <span
+        <div className="space-y-1 mb-3">
+          {settings.symbols.map((symbol, index) => (
+            <div
               key={symbol}
-              className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-sm"
+              draggable
+              onDragStart={() => handleDragStart(index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragEnd={handleDragEnd}
+              className={cn(
+                'flex items-center gap-2 px-2 py-1.5 bg-purple-50 dark:bg-purple-900/20 border rounded cursor-move transition-colors',
+                draggedIndex === index && 'opacity-50',
+                dragOverIndex === index && draggedIndex !== index && 'border-purple-500 bg-purple-100 dark:bg-purple-900/40',
+                'border-purple-200 dark:border-purple-800'
+              )}
             >
-              {symbol}
-              <button
-                onClick={() => removeSymbol(symbol)}
-                className="text-purple-500 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-200"
-              >
-                ×
-              </button>
-            </span>
+              <GripVertical className="w-4 h-4 text-purple-400 dark:text-purple-500 flex-shrink-0" />
+              <span className="flex-1 text-sm font-medium text-purple-700 dark:text-purple-300">{symbol}</span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => moveSymbol(index, 'up')}
+                  disabled={index === 0}
+                  className="p-0.5 text-purple-400 hover:text-purple-600 dark:hover:text-purple-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Move up"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => moveSymbol(index, 'down')}
+                  disabled={index === settings.symbols.length - 1}
+                  className="p-0.5 text-purple-400 hover:text-purple-600 dark:hover:text-purple-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Move down"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => removeSymbol(symbol)}
+                  className="p-0.5 text-red-400 hover:text-red-600 dark:hover:text-red-300"
+                  title="Remove"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           ))}
           {settings.symbols.length === 0 && (
             <span className="text-gray-400 dark:text-gray-500 text-sm">No symbols added</span>
@@ -746,23 +871,65 @@ function StockWidgetEditor({
         </div>
       </div>
 
-      {/* Add Custom Symbol */}
-      <div className="flex gap-2">
-        <Input
-          value={newSymbol}
-          onChange={(e) => setNewSymbol(e.target.value.toUpperCase())}
-          onKeyDown={handleKeyDown}
-          placeholder="Enter symbol (e.g., AAPL)"
-          className="flex-1"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => addSymbol(newSymbol)}
-          disabled={!newSymbol.trim() || settings.symbols.length >= 10}
-        >
-          Add
-        </Button>
+      {/* Symbol Search */}
+      <div ref={containerRef} className="relative">
+        <label className="text-sm font-medium text-gray-900 dark:text-gray-100 block mb-1">Search & Add Symbol</label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => searchResults.length > 0 && setShowResults(true)}
+            placeholder="Search for stocks, ETFs, crypto..."
+            className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            disabled={settings.symbols.length >= 10}
+          />
+          {isSearching && (
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+          )}
+        </div>
+
+        {/* Search Results Dropdown */}
+        {showResults && searchResults.length > 0 && (
+          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+            {searchResults.map((result) => (
+              <button
+                key={result.symbol}
+                onClick={() => addSymbol(result.symbol)}
+                disabled={settings.symbols.includes(result.symbol)}
+                className={cn(
+                  'w-full px-4 py-3 text-left border-b dark:border-gray-700 last:border-b-0 flex items-start gap-3',
+                  settings.symbols.includes(result.symbol)
+                    ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-900'
+                    : 'hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                )}
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">{result.symbol}</span>
+                    <span className="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
+                      {result.type}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400 truncate">{result.name}</div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500">{result.exchDisp}</div>
+                </div>
+                {settings.symbols.includes(result.symbol) && (
+                  <span className="text-xs text-purple-500">Added</span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* No results message */}
+        {showResults && searchQuery && searchResults.length === 0 && !isSearching && (
+          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-lg p-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+            No results for "{searchQuery}" - Press Enter to add anyway
+          </div>
+        )}
       </div>
 
       {/* Quick Add - Popular Stocks */}
@@ -788,9 +955,9 @@ function StockWidgetEditor({
         </div>
       </div>
 
-      {/* Quick Add - Index Funds */}
+      {/* Quick Add - Index Funds & Crypto */}
       <div>
-        <label className="text-sm font-medium text-gray-900 dark:text-gray-100 block mb-1">Index Funds/ETFs</label>
+        <label className="text-sm font-medium text-gray-900 dark:text-gray-100 block mb-1">Indices, ETFs & Crypto</label>
         <div className="flex flex-wrap gap-1">
           {INDEX_FUNDS.map((stock) => (
             <button

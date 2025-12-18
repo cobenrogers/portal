@@ -135,6 +135,14 @@ export interface StockResponse {
   timestamp: string
 }
 
+export interface StockSearchResult {
+  symbol: string
+  name: string
+  exchange: string
+  type: string
+  exchDisp: string
+}
+
 // API response types
 export interface ApiResponse<T> {
   success: boolean
