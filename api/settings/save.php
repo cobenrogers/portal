@@ -19,9 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once __DIR__ . '/config.php';
 
 // Try to load auth - fallback to PIN if auth not configured
-// Path: portal/api/settings/ -> agents/auth/ (3 levels up)
-$authAvailable = file_exists(__DIR__ . '/../../../auth/shared/auth.php') &&
-                 file_exists(__DIR__ . '/../../../auth/auth-config.php');
+// Path: portal/api/settings/ -> agents/bennernet-auth/ (3 levels up)
+$authAvailable = file_exists(__DIR__ . '/../../../bennernet-auth/shared/auth.php') &&
+                 file_exists(__DIR__ . '/../../../bennernet-auth/auth-config.php');
 
 function respond($success, $data = null, $error = null) {
     echo json_encode([
@@ -50,7 +50,7 @@ $settings = $input['settings'] ?? null;
 // Authenticate user
 if ($authAvailable) {
     // Use session-based auth
-    require_once __DIR__ . '/../../../auth/shared/auth.php';
+    require_once __DIR__ . '/../../../bennernet-auth/shared/auth.php';
 
     $user = getCurrentUser();
 
