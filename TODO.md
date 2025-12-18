@@ -3,7 +3,7 @@
 ## High Priority
 
 ### Features
-- [ ] **GitHub Actions deployment**: Set up automated deployment to Bluehost via GitHub Actions
+- [x] **GitHub Actions deployment**: Set up automated deployment to Bluehost via GitHub Actions
 - [ ] **Dark mode implementation**: Theme selector exists but dark mode styles not fully applied
 - [ ] **Widget resize**: Allow widgets to span multiple columns for larger displays
 - [ ] **Error recovery**: Better handling when feed/API fails (cached fallback data)
@@ -47,7 +47,7 @@
 
 ### Developer Experience
 - [ ] **E2E tests**: Playwright or Cypress test suite
-- [ ] **CI/CD pipeline**: Automated testing and deployment
+- [x] **CI/CD pipeline**: Automated testing and deployment
 - [ ] **Docker setup**: Containerized development environment
 - [ ] **API documentation**: OpenAPI/Swagger spec for PHP endpoints
 

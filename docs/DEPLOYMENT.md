@@ -1,8 +1,38 @@
 # Portal - Deployment Guide
 
-## Subdirectory Deployment (e.g., bennernet.com/portal/)
+## Automated Deployment (GitHub Actions)
 
-Portal is configured to run from a `/portal/` subdirectory. Here's how to deploy it.
+Portal uses GitHub Actions to automatically deploy on push to main.
+
+### Repository Secrets Required
+
+Go to **Settings → Secrets and variables → Actions** in the GitHub repo and add:
+
+| Secret | Description | Example |
+|--------|-------------|---------|
+| `FTP_SERVER` | Bluehost FTP server hostname | `ftp.bennernet.com` or the server IP |
+| `FTP_USERNAME` | FTP username for deployment | `bennernetdeploy@bennernet.com` |
+| `FTP_PASSWORD` | FTP password | (the password you set) |
+
+### How It Works
+
+1. Push code to `main` branch
+2. GitHub Actions builds the frontend (`npm run build`)
+3. Combines `dist/` and `api/` into deployment package
+4. Uploads to `/portal/` on server via FTP
+
+### Manual Trigger
+
+You can also trigger deployment manually:
+1. Go to **Actions** tab in GitHub
+2. Select "Deploy to Production" workflow
+3. Click "Run workflow"
+
+---
+
+## Manual Deployment
+
+For manual deployment without GitHub Actions.
 
 ### Prerequisites
 - PHP 8.1+ on the server
