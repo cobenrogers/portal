@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ArrowLeft, Plus, Trash2, Save, Lock, Unlock, Search, MapPin, Loader2 } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Save, Unlock, Search, MapPin, Loader2 } from 'lucide-react'
 import { Button, Input, Select, Card, CardHeader, CardTitle, CardContent } from '@/components/ui'
-import { getSettings, saveSettings, verifyPin, searchLocations } from '@/services/api'
+import { getSettings, saveSettings, searchLocations } from '@/services/api'
+import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/hooks'
 import { generateId, cn } from '@/lib/utils'
 import type {
@@ -93,16 +94,17 @@ function getDefaultWidgetSettings(type: WidgetType): WidgetConfig['settings'] {
 }
 
 export function Settings({ onBack, onSave }: SettingsProps) {
+  const { isAuthenticated, isApproved, user } = useAuth()
   const [settings, setSettings] = useState<PortalSettings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [pin, setPin] = useState('')
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [pinError, setPinError] = useState<string | null>(null)
 
   // Apply theme (needed since Settings page renders independently)
   useTheme(settings?.theme ?? 'light')
+
+  // User must be authenticated and approved to access settings
+  const canEdit = isAuthenticated && isApproved
 
   useEffect(() => {
     async function loadSettings() {
@@ -118,21 +120,6 @@ export function Settings({ onBack, onSave }: SettingsProps) {
     loadSettings()
   }, [])
 
-  const handlePinSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setPinError(null)
-    try {
-      const valid = await verifyPin(pin)
-      if (valid) {
-        setIsAuthenticated(true)
-      } else {
-        setPinError('Invalid PIN')
-      }
-    } catch {
-      setPinError('Failed to verify PIN')
-    }
-  }
-
   const handleSave = async () => {
     if (!settings) return
 
@@ -140,7 +127,7 @@ export function Settings({ onBack, onSave }: SettingsProps) {
     setError(null)
 
     try {
-      await saveSettings(settings, pin)
+      await saveSettings(settings)
       onSave(settings)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save settings')
@@ -226,35 +213,23 @@ export function Settings({ onBack, onSave }: SettingsProps) {
     )
   }
 
-  if (!isAuthenticated) {
+  // Require authentication
+  if (!canEdit) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4">
         <Card className="w-full max-w-sm">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="w-5 h-5" />
-              Enter PIN
-            </CardTitle>
+            <CardTitle className="text-center">Access Denied</CardTitle>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handlePinSubmit} className="space-y-4">
-              <Input
-                type="password"
-                placeholder="Enter PIN to access settings"
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                error={pinError || undefined}
-                autoFocus
-              />
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={onBack} className="flex-1">
-                  Cancel
-                </Button>
-                <Button type="submit" className="flex-1">
-                  Unlock
-                </Button>
-              </div>
-            </form>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+              {!isAuthenticated
+                ? 'Sign in with Google to access settings.'
+                : 'Your account is pending approval. You cannot modify settings yet.'}
+            </p>
+            <Button variant="outline" onClick={onBack} className="w-full">
+              Go Back
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -289,7 +264,7 @@ export function Settings({ onBack, onSave }: SettingsProps) {
         {/* Auth status */}
         <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
           <Unlock className="w-4 h-4" />
-          Authenticated
+          Signed in as {user?.email}
         </div>
 
         {/* Add Widget */}

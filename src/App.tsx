@@ -2,27 +2,30 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Settings as SettingsIcon, Edit, Check, Loader2 } from 'lucide-react'
 import { Dashboard } from './components/Dashboard'
 import { Settings } from './pages/Settings'
-import { Button, Input } from './components/ui'
-import { getSettings, saveSettings, verifyPin } from './services/api'
+import { Button } from './components/ui'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { LoginButton, UserMenu, PreviewBanner } from './components/auth'
+import { getSettings, saveSettings } from './services/api'
 import { useTheme } from './hooks'
 import type { PortalSettings, DashboardLayout } from './types'
 
 type Page = 'dashboard' | 'settings'
 
-function App() {
+function AppContent() {
+  const { isLoading: authLoading, isAuthenticated, isApproved } = useAuth()
   const [page, setPage] = useState<Page>('dashboard')
   const [settings, setSettings] = useState<PortalSettings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
-  const [showPinModal, setShowPinModal] = useState(false)
-  const [pin, setPin] = useState('')
-  const [pinError, setPinError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const layoutChanged = useRef(false)
 
   // Apply theme when settings change
   useTheme(settings?.theme ?? 'light')
+
+  // User can edit if authenticated AND approved
+  const canEdit = isAuthenticated && isApproved
 
   useEffect(() => {
     async function loadSettings() {
@@ -50,52 +53,32 @@ function App() {
     })
   }, [settings])
 
-  const handleDoneEditing = useCallback(() => {
-    if (layoutChanged.current && settings) {
-      setShowPinModal(true)
-    } else {
+  const handleDoneEditing = useCallback(async () => {
+    if (!layoutChanged.current || !settings) {
       setIsEditing(false)
+      return
     }
-  }, [settings])
 
-  const handleSaveLayout = useCallback(async () => {
-    if (!settings) return
-
+    // Save directly - no PIN needed, session auth handles it
     setIsSaving(true)
-    setPinError(null)
-
     try {
-      const valid = await verifyPin(pin)
-      if (!valid) {
-        setPinError('Invalid PIN')
-        setIsSaving(false)
-        return
-      }
-
-      await saveSettings(settings, pin)
+      await saveSettings(settings)
       layoutChanged.current = false
-      setShowPinModal(false)
-      setPin('')
       setIsEditing(false)
     } catch (err) {
-      setPinError(err instanceof Error ? err.message : 'Failed to save')
+      setError(err instanceof Error ? err.message : 'Failed to save')
     } finally {
       setIsSaving(false)
     }
-  }, [settings, pin])
-
-  const handleCancelSave = useCallback(() => {
-    setShowPinModal(false)
-    setPin('')
-    setPinError(null)
-  }, [])
+  }, [settings])
 
   const handleSettingsSave = useCallback((newSettings: PortalSettings) => {
     setSettings(newSettings)
     setPage('dashboard')
   }, [])
 
-  if (isLoading) {
+  // Show loading while auth is initializing
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
@@ -135,37 +118,58 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+      {/* Preview Banner */}
+      <PreviewBanner />
+
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Portal</h1>
           <div className="flex items-center gap-2">
-            {isEditing ? (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleDoneEditing}
-              >
-                <Check className="w-4 h-4 mr-2" />
-                Done
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(true)}
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Edit Layout
-              </Button>
+            {/* Edit controls - only show for approved users */}
+            {canEdit && (
+              <>
+                {isEditing ? (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleDoneEditing}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        Done
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Layout
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPage('settings')}
+                >
+                  <SettingsIcon className="w-5 h-5" />
+                </Button>
+              </>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setPage('settings')}
-            >
-              <SettingsIcon className="w-5 h-5" />
-            </Button>
+
+            {/* Auth UI */}
+            {isAuthenticated ? <UserMenu /> : <LoginButton />}
           </div>
         </div>
       </header>
@@ -181,56 +185,19 @@ function App() {
           <Dashboard
             layout={settings.dashboardLayout}
             onLayoutChange={handleLayoutChange}
-            isEditing={isEditing}
+            isEditing={isEditing && canEdit}
           />
         )}
       </main>
-
-      {/* PIN Modal for saving layout */}
-      {showPinModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-sm w-full p-6">
-            <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Save Layout Changes</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Enter your PIN to save the new widget layout.
-            </p>
-            <Input
-              type="password"
-              placeholder="Enter PIN"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              error={pinError || undefined}
-              autoFocus
-              onKeyDown={(e) => e.key === 'Enter' && handleSaveLayout()}
-            />
-            <div className="flex gap-2 mt-4">
-              <Button
-                variant="outline"
-                onClick={handleCancelSave}
-                className="flex-1"
-                disabled={isSaving}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveLayout}
-                className="flex-1"
-                disabled={isSaving}
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  'Save'
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
+  )
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
 

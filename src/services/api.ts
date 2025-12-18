@@ -78,22 +78,23 @@ export async function getSettings(): Promise<PortalSettings> {
   return response.data
 }
 
-export async function saveSettings(settings: PortalSettings, pin: string): Promise<void> {
-  const response = await fetchApi<ApiResponse<void>>('/settings/save.php', {
+export async function saveSettings(settings: PortalSettings): Promise<void> {
+  const response = await fetch(`${API_BASE}${addCacheBuster('/settings/save.php')}`, {
     method: 'POST',
-    body: JSON.stringify({ settings, pin }),
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // Include session cookie for auth
+    body: JSON.stringify({ settings }),
   })
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to save settings')
-  }
-}
 
-export async function verifyPin(pin: string): Promise<boolean> {
-  const response = await fetchApi<ApiResponse<{ valid: boolean }>>('/settings/verify-pin.php', {
-    method: 'POST',
-    body: JSON.stringify({ pin }),
-  })
-  return response.success && response.data?.valid === true
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Network error' }))
+    throw new Error(error.error || `HTTP ${response.status}`)
+  }
+
+  const data = await response.json()
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to save settings')
+  }
 }
 
 // Geocoding API

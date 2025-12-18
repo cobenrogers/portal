@@ -1,13 +1,14 @@
 <?php
 /**
  * Save Portal Settings
- * Requires PIN authentication
+ * Requires session authentication (approved user)
  */
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Credentials: true');
 
 // Handle preflight
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -16,6 +17,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/config.php';
+
+// Try to load auth - fallback to PIN if auth not configured
+// Path: portal/api/settings/ -> agents/auth/ (3 levels up)
+$authAvailable = file_exists(__DIR__ . '/../../../auth/shared/auth.php') &&
+                 file_exists(__DIR__ . '/../../../auth/auth-config.php');
 
 function respond($success, $data = null, $error = null) {
     echo json_encode([
@@ -39,13 +45,36 @@ if (!$input) {
     respond(false, null, 'Invalid request body');
 }
 
-$pin = $input['pin'] ?? '';
 $settings = $input['settings'] ?? null;
 
-// Verify PIN
-if ($pin !== SETTINGS_PIN) {
-    http_response_code(401);
-    respond(false, null, 'Invalid PIN');
+// Authenticate user
+if ($authAvailable) {
+    // Use session-based auth
+    require_once __DIR__ . '/../../../auth/shared/auth.php';
+
+    $user = getCurrentUser();
+
+    if (!$user) {
+        http_response_code(401);
+        respond(false, null, 'Not authenticated');
+    }
+
+    if (!$user['is_approved'] && !$user['is_admin']) {
+        http_response_code(403);
+        respond(false, null, 'Account pending approval');
+    }
+
+    // TODO: In future, save to database per-user instead of file
+    // For now, save to file (only approved users can save)
+
+} else {
+    // Fallback: PIN-based auth (legacy mode)
+    $pin = $input['pin'] ?? '';
+
+    if ($pin !== SETTINGS_PIN) {
+        http_response_code(401);
+        respond(false, null, 'Invalid PIN');
+    }
 }
 
 // Validate settings structure

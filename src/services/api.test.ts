@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { fetchFeed, fetchWeather, getSettings, saveSettings, verifyPin } from './api'
+import { fetchFeed, fetchWeather, getSettings, saveSettings } from './api'
 
 describe('API Service', () => {
   beforeEach(() => {
@@ -23,7 +23,7 @@ describe('API Service', () => {
       const result = await fetchFeed('https://example.com/feed.xml')
 
       expect(fetch).toHaveBeenCalledWith(
-        '/api/feeds/fetch.php?url=https%3A%2F%2Fexample.com%2Ffeed.xml',
+        expect.stringContaining('/api/feeds/fetch.php?url=https%3A%2F%2Fexample.com%2Ffeed.xml'),
         expect.any(Object)
       )
       expect(result).toEqual(mockFeedData)
@@ -65,7 +65,7 @@ describe('API Service', () => {
       const result = await fetchWeather('New York')
 
       expect(fetch).toHaveBeenCalledWith(
-        '/api/feeds/weather.php?location=New%20York&units=imperial',
+        expect.stringContaining('/api/feeds/weather.php?location=New%20York&units=imperial'),
         expect.any(Object)
       )
       expect(result).toEqual(mockWeather)
@@ -86,7 +86,7 @@ describe('API Service', () => {
       await fetchWeather('London', 'metric')
 
       expect(fetch).toHaveBeenCalledWith(
-        '/api/feeds/weather.php?location=London&units=metric',
+        expect.stringContaining('/api/feeds/weather.php?location=London&units=metric'),
         expect.any(Object)
       )
     })
@@ -109,13 +109,16 @@ describe('API Service', () => {
 
       const result = await getSettings()
 
-      expect(fetch).toHaveBeenCalledWith('/api/settings/get.php', expect.any(Object))
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/settings/get.php'),
+        expect.any(Object)
+      )
       expect(result).toEqual(mockSettings)
     })
   })
 
   describe('saveSettings', () => {
-    it('saves settings with PIN', async () => {
+    it('saves settings with session auth', async () => {
       const mockSettings = {
         dashboardLayout: {
           layouts: { lg: [], md: [], sm: [] },
@@ -129,49 +132,28 @@ describe('API Service', () => {
         json: async () => ({ success: true }),
       } as Response)
 
-      await saveSettings(mockSettings, '123456')
+      await saveSettings(mockSettings)
 
-      expect(fetch).toHaveBeenCalledWith('/api/settings/save.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings: mockSettings, pin: '123456' }),
-      })
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/settings/save.php'),
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+          body: JSON.stringify({ settings: mockSettings }),
+        })
+      )
     })
 
-    it('throws on invalid PIN', async () => {
+    it('throws on unauthorized', async () => {
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ success: false, error: 'Invalid PIN' }),
+        json: async () => ({ success: false, error: 'Not authenticated' }),
       } as Response)
 
       await expect(
-        saveSettings({ dashboardLayout: { layouts: { lg: [], md: [], sm: [] }, widgets: [] }, theme: 'light' }, 'wrong')
+        saveSettings({ dashboardLayout: { layouts: { lg: [], md: [], sm: [] }, widgets: [] }, theme: 'light' })
       ).rejects.toThrow()
-    })
-  })
-
-  describe('verifyPin', () => {
-    it('returns true for valid PIN', async () => {
-      vi.mocked(fetch).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ success: true, data: { valid: true } }),
-      } as Response)
-
-      const result = await verifyPin('236543')
-
-      expect(result).toBe(true)
-    })
-
-    it('returns false for invalid PIN', async () => {
-      vi.mocked(fetch).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ success: true, data: { valid: false } }),
-      } as Response)
-
-      const result = await verifyPin('wrong')
-
-      expect(result).toBe(false)
     })
   })
 })
