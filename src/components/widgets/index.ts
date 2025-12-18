@@ -1,0 +1,4 @@
+export { WidgetWrapper } from './WidgetWrapper'
+export { NewsWidget } from './news/NewsWidget'
+export { WeatherWidget } from './weather/WeatherWidget'
+export { CalendarWidget } from './calendar/CalendarWidget'
