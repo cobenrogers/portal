@@ -3,8 +3,14 @@ import type { ApiResponse, FeedResponse, WeatherData, CalendarEvent, PortalSetti
 // Use relative path for subdirectory deployment - resolves to /portal/api/ in production
 const API_BASE = import.meta.env.DEV ? '/api' : './api'
 
+// Add cache-busting parameter to prevent stale data on mobile and across devices
+function addCacheBuster(endpoint: string): string {
+  const separator = endpoint.includes('?') ? '&' : '?'
+  return `${endpoint}${separator}_t=${Date.now()}`
+}
+
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${endpoint}`, {
+  const response = await fetch(`${API_BASE}${addCacheBuster(endpoint)}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
