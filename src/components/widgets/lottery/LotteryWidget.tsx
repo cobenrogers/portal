@@ -52,32 +52,28 @@ function GameSection({ game }: { game: LotteryGame }) {
       </div>
 
       {/* Content */}
-      <div className="px-2 py-1.5 space-y-1 bg-gray-50 dark:bg-gray-800/50">
+      <div className="px-2 py-1 bg-gray-50 dark:bg-gray-800/50">
         {/* Last drawing info */}
-        <div>
-          <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">
-            Last Drawing: {game.lastDrawDate}
-          </div>
-          <div className="flex items-center gap-1 flex-wrap">
-            {game.winningNumbers.map((num, idx) => (
-              <LotteryBall key={idx} number={num} />
-            ))}
-            <LotteryBall
-              number={game.specialBall}
-              isSpecial
-              label={game.specialBallName}
-            />
-            {game.multiplier && (
-              <div className="ml-1 px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-[10px] font-semibold">
-                {game.multiplier}x
-              </div>
-            )}
-          </div>
+        <div className="flex items-center gap-1 flex-wrap">
+          <span className="text-[9px] text-gray-500 dark:text-gray-400 mr-1">{game.lastDrawDate}:</span>
+          {game.winningNumbers.map((num, idx) => (
+            <LotteryBall key={idx} number={num} />
+          ))}
+          <LotteryBall
+            number={game.specialBall}
+            isSpecial
+            label={game.specialBallName}
+          />
+          {game.multiplier && (
+            <div className="ml-1 px-1 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-[9px] font-semibold">
+              {game.multiplier}x
+            </div>
+          )}
         </div>
 
         {/* Next drawing */}
-        <div className="flex items-center gap-1 text-[10px] text-gray-600 dark:text-gray-300 pt-1 border-t border-gray-200 dark:border-gray-700">
-          <Calendar className="w-3 h-3" />
+        <div className="flex items-center gap-1 text-[9px] text-gray-600 dark:text-gray-300 mt-1">
+          <Calendar className="w-2.5 h-2.5" />
           <span>Next: <span className="font-medium">{game.nextDrawing}</span></span>
           <span className="text-gray-400 dark:text-gray-500">({game.drawDays})</span>
         </div>
