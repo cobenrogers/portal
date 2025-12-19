@@ -15,7 +15,7 @@ function LotteryBall({ number, isSpecial = false, label }: { number: number; isS
     <div className="flex flex-col items-center">
       <div
         className={cn(
-          'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-sm',
+          'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold',
           isSpecial
             ? 'bg-red-500 text-white'
             : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600'
@@ -24,7 +24,7 @@ function LotteryBall({ number, isSpecial = false, label }: { number: number; isS
         {number}
       </div>
       {label && (
-        <span className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">{label}</span>
+        <span className="text-[8px] text-gray-500 dark:text-gray-400 leading-none">{label}</span>
       )}
     </div>
   )
@@ -39,26 +39,26 @@ function GameSection({ game }: { game: LotteryGame }) {
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
       {/* Header with game name and jackpot */}
-      <div className={cn('px-3 py-2 text-white', bgGradient)}>
+      <div className={cn('px-2 py-1 text-white', bgGradient)}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Ticket className="w-4 h-4" />
-            <span className="font-bold text-sm">{game.name}</span>
+          <div className="flex items-center gap-1.5">
+            <Ticket className="w-3 h-3" />
+            <span className="font-bold text-xs">{game.name}</span>
           </div>
           {game.jackpot && (
-            <span className="font-bold text-sm">{game.jackpot}</span>
+            <span className="font-bold text-xs">{game.jackpot}</span>
           )}
         </div>
       </div>
 
       {/* Content */}
-      <div className="p-3 space-y-3 bg-gray-50 dark:bg-gray-800/50">
+      <div className="px-2 py-1.5 space-y-1 bg-gray-50 dark:bg-gray-800/50">
         {/* Last drawing info */}
         <div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+          <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">
             Last Drawing: {game.lastDrawDate}
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1 flex-wrap">
             {game.winningNumbers.map((num, idx) => (
               <LotteryBall key={idx} number={num} />
             ))}
@@ -68,7 +68,7 @@ function GameSection({ game }: { game: LotteryGame }) {
               label={game.specialBallName}
             />
             {game.multiplier && (
-              <div className="ml-2 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs font-semibold">
+              <div className="ml-1 px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-[10px] font-semibold">
                 {game.multiplier}x
               </div>
             )}
@@ -76,8 +76,8 @@ function GameSection({ game }: { game: LotteryGame }) {
         </div>
 
         {/* Next drawing */}
-        <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 pt-2 border-t border-gray-200 dark:border-gray-700">
-          <Calendar className="w-3.5 h-3.5" />
+        <div className="flex items-center gap-1 text-[10px] text-gray-600 dark:text-gray-300 pt-1 border-t border-gray-200 dark:border-gray-700">
+          <Calendar className="w-3 h-3" />
           <span>Next: <span className="font-medium">{game.nextDrawing}</span></span>
           <span className="text-gray-400 dark:text-gray-500">({game.drawDays})</span>
         </div>
@@ -122,28 +122,28 @@ export function LotteryWidget({ settings, onSettingsClick }: LotteryWidgetProps)
       onSettings={onSettingsClick}
     >
       {isLoading && !powerball && !megaMillions ? (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {[1, 2].map((i) => (
             <div key={i} className="animate-pulse">
-              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-t-lg" />
-              <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-b-lg space-y-2">
-                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24" />
-                <div className="flex gap-1.5">
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-t-lg" />
+              <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-b-lg space-y-1">
+                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded w-20" />
+                <div className="flex gap-1">
                   {[1, 2, 3, 4, 5, 6].map((j) => (
-                    <div key={j} className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full" />
+                    <div key={j} className="w-6 h-6 bg-gray-200 dark:bg-gray-700 rounded-full" />
                   ))}
                 </div>
-                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-32 mt-2" />
+                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded w-24 mt-1" />
               </div>
             </div>
           ))}
         </div>
       ) : !powerball && !megaMillions ? (
-        <div className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">
+        <div className="text-gray-500 dark:text-gray-400 text-xs text-center py-2">
           No lottery data available.
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {powerball && <GameSection game={powerball} />}
           {megaMillions && <GameSection game={megaMillions} />}
         </div>

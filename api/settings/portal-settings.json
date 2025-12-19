@@ -344,10 +344,11 @@
                 "settings": {
                     "widgetName": "Stocks",
                     "symbols": [
-                        "AAPL",
-                        "GOOGL",
                         "AMZN",
-                        "SPY"
+                        "^GSPC",
+                        "^DJI",
+                        "^IXIC",
+                        "BTC-USD"
                     ],
                     "refreshInterval": 2
                 }
