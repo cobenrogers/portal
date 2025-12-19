@@ -1,4 +1,4 @@
-import type { ApiResponse, FeedResponse, WeatherData, CalendarEvent, PortalSettings, GeoLocation, StockResponse, StockSearchResult } from '@/types'
+import type { ApiResponse, FeedResponse, WeatherData, CalendarEvent, PortalSettings, GeoLocation, StockResponse, StockSearchResult, LotteryData } from '@/types'
 
 // Use relative path for subdirectory deployment - resolves to /portal/api/ in production
 const API_BASE = import.meta.env.DEV ? '/api' : './api'
@@ -133,4 +133,13 @@ export async function searchStockSymbols(query: string): Promise<StockSearchResu
     throw new Error(response.error || 'Failed to search stocks')
   }
   return response.data || []
+}
+
+// Lottery API
+export async function fetchLotteryData(): Promise<LotteryData> {
+  const response = await fetchApi<ApiResponse<LotteryData>>('/feeds/lottery.php')
+  if (!response.success || !response.data) {
+    throw new Error(response.error || 'Failed to fetch lottery data')
+  }
+  return response.data
 }

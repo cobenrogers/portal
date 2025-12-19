@@ -1,4 +1,4 @@
-export type WidgetType = 'news' | 'weather' | 'calendar' | 'stocks'
+export type WidgetType = 'news' | 'weather' | 'calendar' | 'stocks' | 'lottery'
 
 // Layout item type (replaces react-grid-layout Layout)
 export interface LayoutItem {
@@ -16,7 +16,7 @@ export interface WidgetConfig {
   settings: WidgetSettings
 }
 
-export type WidgetSettings = NewsWidgetSettings | WeatherWidgetSettings | CalendarWidgetSettings | StockWidgetSettings
+export type WidgetSettings = NewsWidgetSettings | WeatherWidgetSettings | CalendarWidgetSettings | StockWidgetSettings | LotteryWidgetSettings
 
 export interface NewsWidgetSettings {
   feedUrl: string
@@ -42,6 +42,10 @@ export interface CalendarWidgetSettings {
 export interface StockWidgetSettings {
   widgetName: string
   symbols: string[] // Array of stock symbols (e.g., ['AAPL', 'GOOGL', 'MSFT'])
+  refreshInterval: number // minutes
+}
+
+export interface LotteryWidgetSettings {
   refreshInterval: number // minutes
 }
 
@@ -141,6 +145,25 @@ export interface StockSearchResult {
   exchange: string
   type: string
   exchDisp: string
+}
+
+// Lottery types
+export interface LotteryGame {
+  name: string
+  lastDrawDate: string | null
+  winningNumbers: number[]
+  specialBall: number
+  specialBallName: string
+  multiplier: number | null
+  jackpot: string | null
+  nextDrawing: string
+  drawDays: string
+}
+
+export interface LotteryData {
+  powerball: LotteryGame | null
+  megaMillions: LotteryGame | null
+  timestamp: string
 }
 
 // API response types

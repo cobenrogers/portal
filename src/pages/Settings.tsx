@@ -13,6 +13,7 @@ import type {
   WeatherWidgetSettings,
   CalendarWidgetSettings,
   StockWidgetSettings,
+  LotteryWidgetSettings,
   GeoLocation,
   StockSearchResult,
 } from '@/types'
@@ -27,6 +28,7 @@ const WIDGET_TYPES: { value: WidgetType; label: string }[] = [
   { value: 'weather', label: 'Weather' },
   { value: 'calendar', label: 'Calendar' },
   { value: 'stocks', label: 'Stock Ticker' },
+  { value: 'lottery', label: 'Lottery' },
 ]
 
 const PRESET_FEEDS = [
@@ -91,6 +93,10 @@ function getDefaultWidgetSettings(type: WidgetType): WidgetConfig['settings'] {
         symbols: ['AAPL', 'GOOGL', 'MSFT', 'AMZN'],
         refreshInterval: 2,
       } as StockWidgetSettings
+    case 'lottery':
+      return {
+        refreshInterval: 30,
+      } as LotteryWidgetSettings
   }
 }
 

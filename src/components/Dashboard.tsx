@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useState, useRef, useEffect } from 'react'
-import { NewsWidget, WeatherWidget, CalendarWidget, StockWidget } from './widgets'
+import { NewsWidget, WeatherWidget, CalendarWidget, StockWidget, LotteryWidget } from './widgets'
 import { cn } from '@/lib/utils'
 import type {
   WidgetConfig,
@@ -8,6 +8,7 @@ import type {
   WeatherWidgetSettings,
   CalendarWidgetSettings,
   StockWidgetSettings,
+  LotteryWidgetSettings,
 } from '@/types'
 
 interface DashboardProps {
@@ -136,6 +137,13 @@ export function Dashboard({
           return (
             <StockWidget
               settings={widget.settings as StockWidgetSettings}
+              onSettingsClick={handleSettings}
+            />
+          )
+        case 'lottery':
+          return (
+            <LotteryWidget
+              settings={widget.settings as LotteryWidgetSettings}
               onSettingsClick={handleSettings}
             />
           )
