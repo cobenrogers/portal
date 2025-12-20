@@ -67,9 +67,32 @@ export interface DashboardLayout {
   widgets: WidgetConfig[]
 }
 
+// Background types
+export type BackgroundType = 'color' | 'holiday' | 'none'
+
+export type HolidayBackground =
+  | 'new-years'
+  | 'valentines'
+  | 'st-patricks'
+  | 'easter'
+  | 'memorial'
+  | 'independence'
+  | 'labor'
+  | 'halloween'
+  | 'thanksgiving'
+  | 'christmas'
+  | 'winter'
+
+export interface BackgroundSettings {
+  type: BackgroundType
+  color?: string // Hex color for 'color' type
+  holiday?: HolidayBackground // Holiday theme for 'holiday' type
+}
+
 export interface PortalSettings {
   dashboardLayout: DashboardLayout
   theme: 'light' | 'dark' | 'system'
+  background?: BackgroundSettings
 }
 
 // Feed types

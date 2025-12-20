@@ -18,6 +18,9 @@ import type {
   DailyContentType,
   GeoLocation,
   StockSearchResult,
+  BackgroundSettings,
+  BackgroundType,
+  HolidayBackground,
 } from '@/types'
 
 interface SettingsProps {
@@ -389,12 +392,12 @@ export function Settings({ onBack, onSave }: SettingsProps) {
           </CardContent>
         </Card>
 
-        {/* Theme */}
+        {/* Theme & Background */}
         <Card>
           <CardHeader>
             <CardTitle>Appearance</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
             <Select
               label="Theme"
               value={settings?.theme || 'light'}
@@ -408,6 +411,14 @@ export function Settings({ onBack, onSave }: SettingsProps) {
                 { value: 'system', label: 'System' },
               ]}
             />
+
+            <div className="border-t dark:border-gray-700 pt-4">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Background</h3>
+              <BackgroundSettingsEditor
+                background={settings?.background}
+                onUpdate={(bg) => settings && setSettings({ ...settings, background: bg })}
+              />
+            </div>
           </CardContent>
         </Card>
       </main>
@@ -1130,6 +1141,47 @@ const DAILY_CONTENT_OPTIONS: { value: DailyContentType; label: string }[] = [
   { value: 'trivia', label: 'Daily Trivia' },
 ]
 
+// Background color palette
+const BACKGROUND_COLORS = [
+  { value: '#f8fafc', label: 'Slate 50', dark: false },
+  { value: '#f1f5f9', label: 'Slate 100', dark: false },
+  { value: '#e2e8f0', label: 'Slate 200', dark: false },
+  { value: '#fef3c7', label: 'Amber 100', dark: false },
+  { value: '#fde68a', label: 'Amber 200', dark: false },
+  { value: '#dbeafe', label: 'Blue 100', dark: false },
+  { value: '#bfdbfe', label: 'Blue 200', dark: false },
+  { value: '#dcfce7', label: 'Green 100', dark: false },
+  { value: '#bbf7d0', label: 'Green 200', dark: false },
+  { value: '#fce7f3', label: 'Pink 100', dark: false },
+  { value: '#fbcfe8', label: 'Pink 200', dark: false },
+  { value: '#f3e8ff', label: 'Purple 100', dark: false },
+  { value: '#e9d5ff', label: 'Purple 200', dark: false },
+  { value: '#fed7aa', label: 'Orange 100', dark: false },
+  { value: '#fdba74', label: 'Orange 200', dark: false },
+  { value: '#0f172a', label: 'Slate 900', dark: true },
+  { value: '#1e293b', label: 'Slate 800', dark: true },
+  { value: '#334155', label: 'Slate 700', dark: true },
+  { value: '#1e3a5f', label: 'Navy', dark: true },
+  { value: '#14532d', label: 'Forest', dark: true },
+  { value: '#4c1d95', label: 'Violet', dark: true },
+  { value: '#7f1d1d', label: 'Wine', dark: true },
+]
+
+// Holiday background options
+const HOLIDAY_BACKGROUNDS: { value: HolidayBackground; label: string; emoji: string; months: number[] }[] = [
+  { value: 'new-years', label: "New Year's", emoji: '🎆', months: [0, 1] },
+  { value: 'valentines', label: "Valentine's Day", emoji: '💕', months: [1, 2] },
+  { value: 'st-patricks', label: "St. Patrick's Day", emoji: '☘️', months: [2, 3] },
+  { value: 'easter', label: 'Easter', emoji: '🐰', months: [3, 4] },
+  { value: 'memorial', label: 'Memorial Day', emoji: '🇺🇸', months: [4, 5] },
+  { value: 'independence', label: 'Independence Day', emoji: '🎇', months: [6, 7] },
+  { value: 'labor', label: 'Labor Day', emoji: '👷', months: [8, 9] },
+  { value: 'halloween', label: 'Halloween', emoji: '🎃', months: [9, 10] },
+  { value: 'thanksgiving', label: 'Thanksgiving', emoji: '🦃', months: [10, 11] },
+  { value: 'christmas', label: 'Christmas', emoji: '🎄', months: [11, 0] },
+  { value: 'winter', label: 'Winter', emoji: '❄️', months: [11, 0, 1, 2] },
+]
+
 function DailyWidgetEditor({
   settings,
   onUpdate,
@@ -1191,6 +1243,118 @@ function DailyWidgetEditor({
           )
         })}
       </div>
+    </div>
+  )
+}
+
+// Background settings editor
+function BackgroundSettingsEditor({
+  background,
+  onUpdate,
+}: {
+  background: BackgroundSettings | undefined
+  onUpdate: (bg: BackgroundSettings) => void
+}) {
+  const currentType: BackgroundType = background?.type || 'none'
+
+  const handleTypeChange = (type: BackgroundType) => {
+    if (type === 'none') {
+      onUpdate({ type: 'none' })
+    } else if (type === 'color') {
+      onUpdate({ type: 'color', color: background?.color || '#f1f5f9' })
+    } else if (type === 'holiday') {
+      onUpdate({ type: 'holiday', holiday: background?.holiday || 'christmas' })
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Background Type Selection */}
+      <div>
+        <label className="text-sm font-medium text-gray-900 dark:text-gray-100 block mb-2">
+          Background Type
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { value: 'none' as BackgroundType, label: 'Default' },
+            { value: 'color' as BackgroundType, label: 'Solid Color' },
+            { value: 'holiday' as BackgroundType, label: 'Holiday Theme' },
+          ].map((option) => (
+            <button
+              key={option.value}
+              onClick={() => handleTypeChange(option.value)}
+              className={cn(
+                'px-3 py-2 text-sm rounded-lg border transition-colors',
+                currentType === option.value
+                  ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-300'
+                  : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Color Picker */}
+      {currentType === 'color' && (
+        <div>
+          <label className="text-sm font-medium text-gray-900 dark:text-gray-100 block mb-2">
+            Select Color
+          </label>
+          <div className="grid grid-cols-7 gap-2">
+            {BACKGROUND_COLORS.map((color) => (
+              <button
+                key={color.value}
+                onClick={() => onUpdate({ type: 'color', color: color.value })}
+                className={cn(
+                  'w-10 h-10 rounded-lg border-2 transition-all hover:scale-110',
+                  background?.color === color.value
+                    ? 'border-blue-500 ring-2 ring-blue-300'
+                    : 'border-gray-300 dark:border-gray-600'
+                )}
+                style={{ backgroundColor: color.value }}
+                title={color.label}
+              >
+                {background?.color === color.value && (
+                  <span className={cn('text-lg', color.dark ? 'text-white' : 'text-gray-800')}>
+                    ✓
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            Light colors work best with light theme, dark colors with dark theme.
+          </p>
+        </div>
+      )}
+
+      {/* Holiday Theme Picker */}
+      {currentType === 'holiday' && (
+        <div>
+          <label className="text-sm font-medium text-gray-900 dark:text-gray-100 block mb-2">
+            Select Holiday Theme
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {HOLIDAY_BACKGROUNDS.map((holiday) => (
+              <button
+                key={holiday.value}
+                onClick={() => onUpdate({ type: 'holiday', holiday: holiday.value })}
+                className={cn(
+                  'px-3 py-2 text-sm rounded-lg border transition-colors flex items-center gap-2',
+                  background?.holiday === holiday.value
+                    ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-300'
+                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                )}
+              >
+                <span>{holiday.emoji}</span>
+                <span>{holiday.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
