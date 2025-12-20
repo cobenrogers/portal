@@ -1,0 +1,95 @@
+import { useState, useEffect, useCallback } from 'react'
+import { WidgetWrapper } from '../WidgetWrapper'
+import { fetchDailyContent } from '@/services/api'
+import type { DailyWidgetSettings, DailyData } from '@/types'
+
+interface DailyWidgetProps {
+  settings: DailyWidgetSettings
+  onSettingsClick?: () => void
+}
+
+export function DailyWidget({ settings, onSettingsClick }: DailyWidgetProps) {
+  const [data, setData] = useState<DailyData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadData = useCallback(async () => {
+    if (!settings.enabledContent || settings.enabledContent.length === 0) {
+      setError('No content types selected')
+      setIsLoading(false)
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+    try {
+      const result = await fetchDailyContent(settings.enabledContent)
+      setData(result)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load daily content')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [settings.enabledContent])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+
+  const contentCount = settings.enabledContent?.length || 0
+
+  return (
+    <WidgetWrapper
+      title="The Daily Widget"
+      isLoading={isLoading}
+      error={error}
+      onRefresh={loadData}
+      onSettings={onSettingsClick}
+    >
+      {isLoading && !data ? (
+        <div className="animate-pulse space-y-3 py-2">
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/5" />
+        </div>
+      ) : !data ? (
+        <div className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">
+          No daily content available.
+        </div>
+      ) : (
+        <div className="space-y-2 py-1">
+          {/* Quote Section */}
+          {settings.enabledContent?.includes('quote') && data.quote && (
+            <div className={contentCount > 1 ? 'pb-2 border-b border-gray-200 dark:border-gray-700' : ''}>
+              <div className="flex gap-1.5">
+                <span className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                  Quote of the Day:
+                </span>
+                <blockquote className="text-gray-700 dark:text-gray-300 text-xs italic leading-relaxed">
+                  "{data.quote.content}" — {data.quote.author}
+                </blockquote>
+              </div>
+            </div>
+          )}
+
+          {/* Joke Section */}
+          {settings.enabledContent?.includes('joke') && data.joke && (
+            <div>
+              <div className="flex gap-1.5">
+                <span className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                  Joke of the Day:
+                </span>
+                <div className="text-gray-700 dark:text-gray-300 text-xs leading-relaxed">
+                  {data.joke.type === 'single' ? (
+                    data.joke.joke
+                  ) : (
+                    <span>{data.joke.setup} <span className="font-medium text-gray-900 dark:text-gray-100">{data.joke.punchline}</span></span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </WidgetWrapper>
+  )
+}

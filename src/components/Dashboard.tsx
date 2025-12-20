@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useState, useRef, useEffect } from 'react'
-import { NewsWidget, WeatherWidget, CalendarWidget, StockWidget, LotteryWidget } from './widgets'
+import { NewsWidget, WeatherWidget, CalendarWidget, StockWidget, LotteryWidget, DailyWidget } from './widgets'
 import { cn } from '@/lib/utils'
 import type {
   WidgetConfig,
@@ -9,11 +9,12 @@ import type {
   CalendarWidgetSettings,
   StockWidgetSettings,
   LotteryWidgetSettings,
+  DailyWidgetSettings,
 } from '@/types'
 
 interface DashboardProps {
   layout: DashboardLayout
-  onLayoutChange?: (layouts: DashboardLayout['layouts']) => void
+  onLayoutChange?: (layouts: DashboardLayout['layouts'], widgets?: WidgetConfig[]) => void
   onWidgetSettings?: (widgetId: string) => void
   isEditing?: boolean
 }
@@ -43,22 +44,11 @@ export function Dashboard({
     return () => window.removeEventListener('resize', updateBreakpoint)
   }, [])
 
-  const currentLayout = layout.layouts[breakpoint]
-
-  // Sort widgets by position (y first, then x)
-  // Handle null/undefined y values by treating them as max value (end of list)
+  // Sort widgets by their order property for consistent display across all screen sizes
   const sortedWidgets = useMemo(() => {
-    const widgetMap = new Map(layout.widgets.map((w) => [w.id, w]))
-    return [...currentLayout]
-      .sort((a, b) => {
-        const ay = a.y ?? Number.MAX_SAFE_INTEGER
-        const by = b.y ?? Number.MAX_SAFE_INTEGER
-        if (ay !== by) return ay - by
-        return (a.x ?? 0) - (b.x ?? 0)
-      })
-      .map((l) => ({ layout: l, widget: widgetMap.get(l.i)! }))
-      .filter((item) => item.widget)
-  }, [currentLayout, layout.widgets])
+    return [...layout.widgets]
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+  }, [layout.widgets])
 
   const handleDragStart = useCallback((e: React.DragEvent, widgetId: string) => {
     if (!isEditing) return
@@ -76,29 +66,27 @@ export function Dashboard({
     e.preventDefault()
     if (!draggedWidget || !onLayoutChange) return
 
-    const sourceIndex = sortedWidgets.findIndex((w) => w.widget.id === draggedWidget)
+    const sourceIndex = sortedWidgets.findIndex((w) => w.id === draggedWidget)
     if (sourceIndex === targetIndex) return
 
-    // Reorder the layouts
-    const newLayout = [...currentLayout]
-    const [moved] = newLayout.splice(sourceIndex, 1)
-    newLayout.splice(targetIndex, 0, moved)
+    // Reorder the widgets array
+    const newWidgets = [...sortedWidgets]
+    const [moved] = newWidgets.splice(sourceIndex, 1)
+    newWidgets.splice(targetIndex, 0, moved)
 
-    // Update y positions to reflect new order
-    const updatedLayout = newLayout.map((item, idx) => ({
-      ...item,
-      y: Math.floor(idx / 2),
-      x: (idx % 2) * 4,
+    // Update order property for all widgets
+    const updatedWidgets = newWidgets.map((widget, idx) => ({
+      ...widget,
+      order: idx + 1,
     }))
 
     onLayoutChange({
       ...layout.layouts,
-      [breakpoint]: updatedLayout,
-    })
+    }, updatedWidgets)
 
     setDraggedWidget(null)
     setDropTarget(null)
-  }, [draggedWidget, sortedWidgets, currentLayout, onLayoutChange, layout.layouts, breakpoint])
+  }, [draggedWidget, sortedWidgets, onLayoutChange, layout.layouts])
 
   const handleDragEnd = useCallback(() => {
     setDraggedWidget(null)
@@ -147,6 +135,13 @@ export function Dashboard({
               onSettingsClick={handleSettings}
             />
           )
+        case 'daily':
+          return (
+            <DailyWidget
+              settings={widget.settings as DailyWidgetSettings}
+              onSettingsClick={handleSettings}
+            />
+          )
         default:
           return <div className="p-4">Unknown widget type</div>
       }
@@ -167,7 +162,7 @@ export function Dashboard({
         gridCols === 1 && 'grid-cols-1'
       )}
     >
-      {sortedWidgets.map(({ widget }, index) => (
+      {sortedWidgets.map((widget, index) => (
         <div
           key={widget.id}
           className={cn(

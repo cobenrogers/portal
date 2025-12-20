@@ -4,14 +4,11 @@
 
 ### Features
 
-- [X] **GitHub Actions deployment**: Set up automated deployment to Bluehost via GitHub Actions
-- [X] **Dark mode implementation**: Full dark mode with theme selector (light/dark/system) and Tailwind CSS dark variants
 - [ ] **Error recovery**: Better handling when feed/API fails (cached fallback data)
 - [ ] **Offline support**: Service worker for basic offline functionality
 
 ### Bugs
 
-- [X] **Widget refresh button not working**: Fixed by adding pointer-events-none to icons and stopPropagation on mousedown/pointerdown events.
 - [ ] **Feed image loading**: Some feeds have images that fail to load (CDN issues, hotlink protection)
 - [ ] **Calendar timezone handling**: Ensure events display in user's local timezone correctly
 
@@ -32,21 +29,42 @@
 
 ### Infrastructure
 
-- [X] **Google OAuth authentication**: SSO via bennernet-auth service with session cookies
-- [X] **User accounts**: Database-backed user management with admin approval workflow
-- [X] **Admin dashboard**: User management UI at /auth/admin/
 - [ ] **Import/Export**: Backup and restore settings
 - [ ] **PWA manifest**: Install as mobile app
 
 ### Developer Experience
 
 - [ ] **E2E tests**: Playwright or Cypress test suite
-- [X] **CI/CD pipeline**: Automated testing and deployment
 - [ ] **Docker setup**: Containerized development environment
 - [ ] **API documentation**: OpenAPI/Swagger spec for PHP endpoints
 
 ## Future consideration
 
+### New Widgets - User Requested
+- [X] **Quote of the day**: Daily inspirational quotes (ZenQuotes API with server-side caching)
+- [X] **Joke of the day**: Daily humor (JokeAPI with safe-mode and server-side caching)
+- [ ] **Random personal photo**: Display random photo from iCloud/Google Photos (configurable per user)
+- [ ] **Google Search**: Embedded search bar (redirect or inline results via Custom Search API)
+- [ ] **Google Maps**: Embed map with traffic, commute times, or favorite locations
+- [ ] **International clock**: Display current time across multiple configurable timezones
+
+### New Widgets - Ideas
+- [ ] **Word of the day**: Vocabulary builder (Wordnik API)
+- [ ] **This day in history**: Historical events for today's date
+- [ ] **Daily trivia**: Random trivia question
+- [ ] **Horoscope**: Daily horoscope by zodiac sign
+- [ ] **Recipe of the day**: Cooking inspiration
+- [ ] **Reddit top post**: Top posts from favorite subreddits
+- [ ] **GitHub activity**: Recent commits/contributions
+- [ ] **Spotify now playing**: Music integration showing current/recent tracks
+- [ ] **Package tracking**: Aggregate shipping updates from carriers
+- [ ] **Calendar agenda**: Today's events from Google/Apple Calendar
+- [ ] **Reminders/Tasks**: Quick task list or Apple Reminders integration
+- [ ] **Local events**: Concerts, meetups nearby (Eventbrite, Meetup APIs)
+- [ ] **Air quality index**: Environmental/AQI data
+- [ ] **NASA Astronomy Picture of the Day**: Beautiful space imagery via NASA APOD API
+
+### Platform Improvements
 - [ ] **Publish Google OAuth app**: Add privacy policy & terms of service pages, submit for Google verification
 - [ ] **Widget resize**: Allow widgets to span multiple columns for larger displays
 - [ ] **Bookmarks widget**: Quick links to favorite sites
@@ -65,9 +83,14 @@
 
 ## Completed
 
-**Calendar widget custom naming**
-
-- [X] 
+### Recent
+- [X] **GitHub Actions deployment**: Set up automated deployment to Bluehost via GitHub Actions
+- [X] **Dark mode implementation**: Full dark mode with theme selector (light/dark/system) and Tailwind CSS dark variants
+- [X] **Widget refresh button not working**: Fixed by adding pointer-events-none to icons and stopPropagation on mousedown/pointerdown events
+- [X] **Google OAuth authentication**: SSO via bennernet-auth service with session cookies
+- [X] **User accounts**: Database-backed user management with admin approval workflow
+- [X] **Admin dashboard**: User management UI at /auth/admin/
+- [X] **CI/CD pipeline**: Automated testing and deployment
 - [X] **Stock ticker widget**: Display stock prices and daily changes using Yahoo Finance API
 
 ### v0.3.0

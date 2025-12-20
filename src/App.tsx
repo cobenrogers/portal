@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { LoginButton, UserMenu, PreviewBanner } from './components/auth'
 import { getSettings, saveSettings } from './services/api'
 import { useTheme } from './hooks'
-import type { PortalSettings, DashboardLayout } from './types'
+import type { PortalSettings, DashboardLayout, WidgetConfig } from './types'
 
 type Page = 'dashboard' | 'settings'
 
@@ -41,7 +41,7 @@ function AppContent() {
     loadSettings()
   }, [])
 
-  const handleLayoutChange = useCallback((layouts: DashboardLayout['layouts']) => {
+  const handleLayoutChange = useCallback((layouts: DashboardLayout['layouts'], widgets?: WidgetConfig[]) => {
     if (!settings) return
     layoutChanged.current = true
     setSettings({
@@ -49,6 +49,8 @@ function AppContent() {
       dashboardLayout: {
         ...settings.dashboardLayout,
         layouts,
+        // If widgets are provided (e.g., from reordering), update them
+        ...(widgets && { widgets }),
       },
     })
   }, [settings])

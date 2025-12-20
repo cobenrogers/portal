@@ -1,4 +1,4 @@
-export type WidgetType = 'news' | 'weather' | 'calendar' | 'stocks' | 'lottery'
+export type WidgetType = 'news' | 'weather' | 'calendar' | 'stocks' | 'lottery' | 'daily'
 
 // Layout item type (replaces react-grid-layout Layout)
 export interface LayoutItem {
@@ -14,9 +14,10 @@ export interface WidgetConfig {
   type: WidgetType
   title: string
   settings: WidgetSettings
+  order: number // Display order (1 = top-left, reading left-to-right, top-to-bottom)
 }
 
-export type WidgetSettings = NewsWidgetSettings | WeatherWidgetSettings | CalendarWidgetSettings | StockWidgetSettings | LotteryWidgetSettings
+export type WidgetSettings = NewsWidgetSettings | WeatherWidgetSettings | CalendarWidgetSettings | StockWidgetSettings | LotteryWidgetSettings | DailyWidgetSettings
 
 export interface NewsWidgetSettings {
   feedUrl: string
@@ -47,6 +48,13 @@ export interface StockWidgetSettings {
 
 export interface LotteryWidgetSettings {
   refreshInterval: number // minutes
+}
+
+// Daily content types that can be enabled in the Daily widget
+export type DailyContentType = 'quote' | 'joke'
+
+export interface DailyWidgetSettings {
+  enabledContent: DailyContentType[]
 }
 
 export interface DashboardLayout {
@@ -164,6 +172,29 @@ export interface LotteryData {
   powerball: LotteryGame | null
   megaMillions: LotteryGame | null
   timestamp: string
+}
+
+// Quote types
+export interface QuoteData {
+  content: string
+  author: string
+  cachedAt: string
+}
+
+// Joke types
+export interface JokeData {
+  type: 'single' | 'twopart'
+  joke?: string
+  setup?: string
+  punchline?: string
+  category: string
+  cachedAt: string
+}
+
+// Combined Daily data (for the consolidated Daily widget)
+export interface DailyData {
+  quote?: QuoteData
+  joke?: JokeData
 }
 
 // API response types

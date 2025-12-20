@@ -78,6 +78,13 @@
                     "y": 5,
                     "w": 3,
                     "h": 3
+                },
+                {
+                    "i": "daily-w0spewcay",
+                    "x": 0,
+                    "y": 6,
+                    "w": 3,
+                    "h": 3
                 }
             ],
             "md": [
@@ -157,6 +164,13 @@
                     "y": 5,
                     "w": 3,
                     "h": 3
+                },
+                {
+                    "i": "daily-w0spewcay",
+                    "x": 0,
+                    "y": 6,
+                    "w": 3,
+                    "h": 3
                 }
             ],
             "sm": [
@@ -234,6 +248,13 @@
                     "i": "weather-fmuiyl48j",
                     "x": 0,
                     "y": 8,
+                    "w": 3,
+                    "h": 3
+                },
+                {
+                    "i": "daily-w0spewcay",
+                    "x": 0,
+                    "y": 9,
                     "w": 3,
                     "h": 3
                 }
@@ -363,6 +384,17 @@
                     "showForecast": true,
                     "latitude": 42.04114,
                     "longitude": -87.69006
+                }
+            },
+            {
+                "id": "daily-w0spewcay",
+                "type": "daily",
+                "title": "Daily",
+                "settings": {
+                    "enabledContent": [
+                        "quote",
+                        "joke"
+                    ]
                 }
             }
         ]

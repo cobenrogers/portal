@@ -14,6 +14,8 @@ import type {
   CalendarWidgetSettings,
   StockWidgetSettings,
   LotteryWidgetSettings,
+  DailyWidgetSettings,
+  DailyContentType,
   GeoLocation,
   StockSearchResult,
 } from '@/types'
@@ -23,13 +25,45 @@ interface SettingsProps {
   onSave: (settings: PortalSettings) => void
 }
 
-const WIDGET_TYPES: { value: WidgetType; label: string }[] = [
+interface WidgetTypeConfig {
+  value: WidgetType
+  label: string
+}
+
+const WIDGET_TYPES: WidgetTypeConfig[] = [
   { value: 'news', label: 'News Feed' },
   { value: 'weather', label: 'Weather' },
   { value: 'calendar', label: 'Calendar' },
   { value: 'stocks', label: 'Stock Ticker' },
   { value: 'lottery', label: 'Lottery' },
+  { value: 'daily', label: 'Daily' },
 ]
+
+// Add Widget Section - simple list of widget types
+function AddWidgetSection({ onAddWidget }: { onAddWidget: (type: WidgetType) => void }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Add Widget</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-wrap gap-2">
+          {WIDGET_TYPES.map((type) => (
+            <Button
+              key={type.value}
+              variant="outline"
+              size="sm"
+              onClick={() => onAddWidget(type.value)}
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              {type.label}
+            </Button>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 const PRESET_FEEDS = [
   // Top US News
@@ -97,6 +131,10 @@ function getDefaultWidgetSettings(type: WidgetType): WidgetConfig['settings'] {
       return {
         refreshInterval: 30,
       } as LotteryWidgetSettings
+    case 'daily':
+      return {
+        enabledContent: ['quote', 'joke'],
+      } as DailyWidgetSettings
   }
 }
 
@@ -147,11 +185,19 @@ export function Settings({ onBack, onSave }: SettingsProps) {
     if (!settings) return
 
     const id = `${type}-${generateId()}`
+
+    // Calculate the next order value (one more than current max)
+    const existingWidgets = settings.dashboardLayout.widgets
+    const maxOrder = existingWidgets.length > 0
+      ? Math.max(...existingWidgets.map(w => w.order ?? 0))
+      : 0
+
     const newWidget: WidgetConfig = {
       id,
       type,
       title: type.charAt(0).toUpperCase() + type.slice(1),
       settings: getDefaultWidgetSettings(type),
+      order: maxOrder + 1,
     }
 
     // Calculate next y position based on existing widgets
@@ -179,6 +225,12 @@ export function Settings({ onBack, onSave }: SettingsProps) {
   const removeWidget = useCallback((widgetId: string) => {
     if (!settings) return
 
+    // Remove widget and recalculate order values to keep them contiguous
+    const remainingWidgets = settings.dashboardLayout.widgets
+      .filter((w) => w.id !== widgetId)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .map((widget, idx) => ({ ...widget, order: idx + 1 }))
+
     setSettings({
       ...settings,
       dashboardLayout: {
@@ -188,7 +240,7 @@ export function Settings({ onBack, onSave }: SettingsProps) {
           md: settings.dashboardLayout.layouts.md.filter((l) => l.i !== widgetId),
           sm: settings.dashboardLayout.layouts.sm.filter((l) => l.i !== widgetId),
         },
-        widgets: settings.dashboardLayout.widgets.filter((w) => w.id !== widgetId),
+        widgets: remainingWidgets,
       },
     })
   }, [settings])
@@ -275,26 +327,7 @@ export function Settings({ onBack, onSave }: SettingsProps) {
         </div>
 
         {/* Add Widget */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Add Widget</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {WIDGET_TYPES.map((type) => (
-                <Button
-                  key={type.value}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addWidget(type.value)}
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  {type.label}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <AddWidgetSection onAddWidget={addWidget} />
 
         {/* Widget List */}
         <Card>
@@ -368,7 +401,9 @@ function WidgetEditor({
               widget.type === 'news' && 'bg-blue-500',
               widget.type === 'weather' && 'bg-yellow-500',
               widget.type === 'calendar' && 'bg-green-500',
-              widget.type === 'stocks' && 'bg-purple-500'
+              widget.type === 'stocks' && 'bg-purple-500',
+              widget.type === 'lottery' && 'bg-red-500',
+              widget.type === 'daily' && 'bg-orange-500'
             )}
           />
           <span className="font-medium text-gray-900 dark:text-gray-100">
@@ -378,9 +413,15 @@ function WidgetEditor({
               ? (widget.settings as WeatherWidgetSettings).location
               : widget.type === 'calendar'
               ? (widget.settings as CalendarWidgetSettings).calendarName || 'Calendar'
-              : (widget.settings as StockWidgetSettings).widgetName || 'Stocks'}
+              : widget.type === 'stocks'
+              ? (widget.settings as StockWidgetSettings).widgetName || 'Stocks'
+              : widget.type === 'lottery'
+              ? 'Lottery'
+              : widget.type === 'daily'
+              ? 'The Daily Widget'
+              : 'Widget'}
           </span>
-          <span className="text-xs text-gray-500 dark:text-gray-400 uppercase">{widget.type}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 uppercase">{widget.type === 'daily' ? 'widget' : widget.type}</span>
         </button>
         <Button variant="ghost" size="sm" onClick={onRemove} className="text-red-600 dark:text-red-400">
           <Trash2 className="w-4 h-4" />
@@ -412,6 +453,17 @@ function WidgetEditor({
               settings={widget.settings as StockWidgetSettings}
               onUpdate={onUpdate}
             />
+          )}
+          {widget.type === 'daily' && (
+            <DailyWidgetEditor
+              settings={widget.settings as DailyWidgetSettings}
+              onUpdate={onUpdate}
+            />
+          )}
+          {widget.type === 'lottery' && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No settings to configure for this widget.
+            </p>
           )}
         </div>
       )}
@@ -993,5 +1045,76 @@ function StockWidgetEditor({
         max={60}
       />
     </>
+  )
+}
+
+// Daily content type options
+const DAILY_CONTENT_OPTIONS: { value: DailyContentType; label: string }[] = [
+  { value: 'quote', label: 'Quote of the Day' },
+  { value: 'joke', label: 'Joke of the Day' },
+]
+
+function DailyWidgetEditor({
+  settings,
+  onUpdate,
+}: {
+  settings: DailyWidgetSettings
+  onUpdate: (s: Partial<DailyWidgetSettings>) => void
+}) {
+  const toggleContent = (contentType: DailyContentType) => {
+    const currentEnabled = settings.enabledContent || []
+    const isEnabled = currentEnabled.includes(contentType)
+
+    if (isEnabled) {
+      // Don't allow disabling if it's the only one enabled
+      if (currentEnabled.length <= 1) return
+      onUpdate({ enabledContent: currentEnabled.filter(c => c !== contentType) })
+    } else {
+      onUpdate({ enabledContent: [...currentEnabled, contentType] })
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <label className="text-sm font-medium text-gray-900 dark:text-gray-100 block">
+        Content to Display
+      </label>
+      <p className="text-xs text-gray-500 dark:text-gray-400">
+        Select which daily content to show in this widget. At least one must be enabled.
+      </p>
+      <div className="space-y-2">
+        {DAILY_CONTENT_OPTIONS.map((option) => {
+          const isEnabled = (settings.enabledContent || []).includes(option.value)
+          const isOnlyOne = (settings.enabledContent || []).length === 1 && isEnabled
+
+          return (
+            <label
+              key={option.value}
+              className={cn(
+                'flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors',
+                isEnabled
+                  ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-700'
+                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750',
+                isOnlyOne && 'cursor-not-allowed opacity-70'
+              )}
+            >
+              <input
+                type="checkbox"
+                checked={isEnabled}
+                onChange={() => toggleContent(option.value)}
+                disabled={isOnlyOne}
+                className="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+              />
+              <span className={cn(
+                'text-sm font-medium',
+                isEnabled ? 'text-orange-700 dark:text-orange-300' : 'text-gray-700 dark:text-gray-300'
+              )}>
+                {option.label}
+              </span>
+            </label>
+          )
+        })}
+      </div>
+    </div>
   )
 }
