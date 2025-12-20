@@ -23,33 +23,33 @@ function StockRow({ quote }: { quote: StockQuote }) {
   const bgColor = isPositive ? 'bg-green-500/20' : 'bg-red-500/20'
 
   return (
-    <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+    <div className="flex items-center justify-between py-1 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
       <div className="flex-1 min-w-0">
-        <div className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">
+        <div className="font-semibold text-gray-900 dark:text-gray-100 text-xs truncate">
           {quote.symbol}
         </div>
-        <div className="text-xs text-gray-500 dark:text-gray-400 truncate" title={quote.name}>
-          {quote.name.length > 20 ? quote.name.substring(0, 20) + '...' : quote.name}
+        <div className="text-[10px] text-gray-500 dark:text-gray-400 truncate" title={quote.name}>
+          {quote.name.length > 18 ? quote.name.substring(0, 18) + '...' : quote.name}
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {/* Trend indicator */}
-        <div className={cn('p-1 rounded', bgColor)}>
+        <div className={cn('p-0.5 rounded', bgColor)}>
           {isPositive ? (
-            <TrendingUp className={cn('w-4 h-4', changeColor)} />
+            <TrendingUp className={cn('w-3 h-3', changeColor)} />
           ) : (
-            <TrendingDown className={cn('w-4 h-4', changeColor)} />
+            <TrendingDown className={cn('w-3 h-3', changeColor)} />
           )}
         </div>
 
         {/* Price and change */}
-        <div className="text-right min-w-[80px]">
-          <div className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+        <div className="text-right min-w-[70px]">
+          <div className="font-semibold text-gray-900 dark:text-gray-100 text-xs">
             {formatPrice(quote.price)}
           </div>
-          <div className={cn('text-xs font-medium', changeColor)}>
-            {isPositive ? '+' : ''}{quote.change.toFixed(2)} ({isPositive ? '+' : ''}{quote.changePercent.toFixed(2)}%)
+          <div className={cn('text-[10px] font-medium', changeColor)}>
+            {isPositive ? '+' : ''}{quote.changePercent.toFixed(2)}%
           </div>
         </div>
       </div>
