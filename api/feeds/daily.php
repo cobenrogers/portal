@@ -12,13 +12,16 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 
+// Use Mountain Time for daily content refresh (MDT/MST)
+date_default_timezone_set('America/Denver');
+
 $cacheDir = __DIR__ . '/../cache/';
 $quoteCacheFile = $cacheDir . 'quote-cache.json';
 $jokeCacheFile = $cacheDir . 'joke-cache.json';
 $wordCacheFile = $cacheDir . 'word-cache.json';
 $historyCacheFile = $cacheDir . 'history-cache.json';
 $triviaCacheFile = $cacheDir . 'trivia-cache.json';
-$today = date('Y-m-d');
+$today = date('Y-m-d'); // Now uses Mountain Time
 
 // Parse requested content types
 $validTypes = ['quote', 'joke', 'word', 'history', 'trivia'];

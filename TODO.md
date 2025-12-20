@@ -40,18 +40,11 @@
 
 ## Future consideration
 
-### New Widgets - User Requested
-- [X] **Quote of the day**: Daily inspirational quotes (ZenQuotes API with server-side caching)
-- [X] **Joke of the day**: Daily humor (JokeAPI with safe-mode and server-side caching)
+### New Widget Ideas
 - [ ] **Random personal photo**: Display random photo from iCloud/Google Photos (configurable per user)
 - [ ] **Google Search**: Embedded search bar (redirect or inline results via Custom Search API)
 - [ ] **Google Maps**: Embed map with traffic, commute times, or favorite locations
 - [ ] **International clock**: Display current time across multiple configurable timezones
-
-### New Widgets - Ideas
-- [ ] **Word of the day**: Vocabulary builder (Wordnik API)
-- [ ] **This day in history**: Historical events for today's date
-- [ ] **Daily trivia**: Random trivia question
 - [ ] **Horoscope**: Daily horoscope by zodiac sign
 - [ ] **Recipe of the day**: Cooking inspiration
 - [ ] **Reddit top post**: Top posts from favorite subreddits
@@ -84,6 +77,14 @@
 ## Completed
 
 ### Recent
+- [X] **Daily widget**: Consolidated widget with Quote, Joke, Word of the Day, and Daily Trivia (configurable content types)
+- [X] **This Day in History widget**: Standalone widget showing historical events for today's date (Muffinlabs API)
+- [X] **Word of the day**: Vocabulary builder with curated word list (Free Dictionary API)
+- [X] **Daily trivia**: Random trivia question with reveal answer (Open Trivia DB API)
+- [X] **Quote of the day**: Daily inspirational quotes (ZenQuotes API with server-side caching)
+- [X] **Joke of the day**: Daily humor (JokeAPI with safe-mode and server-side caching)
+- [X] **Lottery widget**: Powerball and Mega Millions latest results and next drawing info
+- [X] **Widget ordering**: Consistent display order across all breakpoints with drag-and-drop reordering
 - [X] **GitHub Actions deployment**: Set up automated deployment to Bluehost via GitHub Actions
 - [X] **Dark mode implementation**: Full dark mode with theme selector (light/dark/system) and Tailwind CSS dark variants
 - [X] **Widget refresh button not working**: Fixed by adding pointer-events-none to icons and stopPropagation on mousedown/pointerdown events
@@ -118,4 +119,4 @@
 
 ---
 
-*Last updated: December 18, 2024*
+*Last updated: December 19, 2024*

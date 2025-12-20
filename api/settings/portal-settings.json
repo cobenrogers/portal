@@ -85,6 +85,13 @@
                     "y": 6,
                     "w": 3,
                     "h": 3
+                },
+                {
+                    "i": "history-1yml2qvk5",
+                    "x": 0,
+                    "y": 7,
+                    "w": 3,
+                    "h": 3
                 }
             ],
             "md": [
@@ -171,6 +178,13 @@
                     "y": 6,
                     "w": 3,
                     "h": 3
+                },
+                {
+                    "i": "history-1yml2qvk5",
+                    "x": 0,
+                    "y": 7,
+                    "w": 3,
+                    "h": 3
                 }
             ],
             "sm": [
@@ -255,6 +269,13 @@
                     "i": "daily-w0spewcay",
                     "x": 0,
                     "y": 9,
+                    "w": 3,
+                    "h": 3
+                },
+                {
+                    "i": "history-1yml2qvk5",
+                    "x": 0,
+                    "y": 10,
                     "w": 3,
                     "h": 3
                 }
@@ -399,6 +420,13 @@
                         "trivia"
                     ]
                 }
+            },
+            {
+                "id": "history-1yml2qvk5",
+                "type": "history",
+                "title": "History",
+                "settings": [],
+                "order": 1
             }
         ]
     },

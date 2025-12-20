@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ArrowLeft, Plus, Trash2, Save, Unlock, Search, MapPin, Loader2, GripVertical } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Save, Unlock, Search, MapPin, Loader2, GripVertical, ChevronUp, ChevronDown } from 'lucide-react'
 import { Button, Input, Select, Card, CardHeader, CardTitle, CardContent } from '@/components/ui'
 import { getSettings, saveSettings, searchLocations, searchStockSymbols } from '@/services/api'
 import { useAuth } from '@/contexts/AuthContext'
@@ -267,6 +267,32 @@ export function Settings({ onBack, onSave }: SettingsProps) {
     [settings]
   )
 
+  const moveWidget = useCallback((widgetId: string, direction: 'up' | 'down') => {
+    if (!settings) return
+
+    const widgets = [...settings.dashboardLayout.widgets].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    const currentIndex = widgets.findIndex(w => w.id === widgetId)
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+
+    if (targetIndex < 0 || targetIndex >= widgets.length) return
+
+    // Swap the widgets
+    const temp = widgets[currentIndex]
+    widgets[currentIndex] = widgets[targetIndex]
+    widgets[targetIndex] = temp
+
+    // Reassign order values
+    const reorderedWidgets = widgets.map((widget, idx) => ({ ...widget, order: idx + 1 }))
+
+    setSettings({
+      ...settings,
+      dashboardLayout: {
+        ...settings.dashboardLayout,
+        widgets: reorderedWidgets,
+      },
+    })
+  }, [settings])
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
@@ -337,15 +363,24 @@ export function Settings({ onBack, onSave }: SettingsProps) {
           <CardHeader>
             <CardTitle>Widgets ({settings?.dashboardLayout.widgets.length || 0})</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {settings?.dashboardLayout.widgets.map((widget) => (
-              <WidgetEditor
-                key={widget.id}
-                widget={widget}
-                onUpdate={(newSettings) => updateWidgetSettings(widget.id, newSettings)}
-                onRemove={() => removeWidget(widget.id)}
-              />
-            ))}
+          <CardContent className="space-y-2">
+            {(() => {
+              const sortedWidgets = [...(settings?.dashboardLayout.widgets || [])].sort(
+                (a, b) => (a.order ?? 0) - (b.order ?? 0)
+              )
+              return sortedWidgets.map((widget, index) => (
+                <WidgetEditor
+                  key={widget.id}
+                  widget={widget}
+                  index={index}
+                  totalWidgets={sortedWidgets.length}
+                  onUpdate={(newSettings) => updateWidgetSettings(widget.id, newSettings)}
+                  onRemove={() => removeWidget(widget.id)}
+                  onMoveUp={() => moveWidget(widget.id, 'up')}
+                  onMoveDown={() => moveWidget(widget.id, 'down')}
+                />
+              ))
+            })()}
             {settings?.dashboardLayout.widgets.length === 0 && (
               <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">
                 No widgets configured. Add one above.
@@ -382,25 +417,56 @@ export function Settings({ onBack, onSave }: SettingsProps) {
 
 function WidgetEditor({
   widget,
+  index,
+  totalWidgets,
   onUpdate,
   onRemove,
+  onMoveUp,
+  onMoveDown,
 }: {
   widget: WidgetConfig
+  index: number
+  totalWidgets: number
   onUpdate: (settings: Partial<WidgetConfig['settings']>) => void
   onRemove: () => void
+  onMoveUp: () => void
+  onMoveDown: () => void
 }) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const isFirst = index === 0
+  const isLast = index === totalWidgets - 1
 
   return (
-    <div className="border dark:border-gray-700 rounded-lg p-4">
-      <div className="flex items-center justify-between">
+    <div className="border dark:border-gray-700 rounded-lg p-3">
+      <div className="flex items-center gap-2">
+        {/* Reorder controls */}
+        <div className="flex flex-col">
+          <button
+            onClick={onMoveUp}
+            disabled={isFirst}
+            className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Move up"
+          >
+            <ChevronUp className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onMoveDown}
+            disabled={isLast}
+            className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Move down"
+          >
+            <ChevronDown className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Widget info - clickable to expand */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-2 text-left flex-1"
+          className="flex items-center gap-2 text-left flex-1 min-w-0"
         >
           <span
             className={cn(
-              'w-2 h-2 rounded-full',
+              'w-2 h-2 rounded-full flex-shrink-0',
               widget.type === 'news' && 'bg-blue-500',
               widget.type === 'weather' && 'bg-yellow-500',
               widget.type === 'calendar' && 'bg-green-500',
@@ -410,7 +476,7 @@ function WidgetEditor({
               widget.type === 'history' && 'bg-amber-600'
             )}
           />
-          <span className="font-medium text-gray-900 dark:text-gray-100">
+          <span className="font-medium text-gray-900 dark:text-gray-100 truncate">
             {widget.type === 'news'
               ? (widget.settings as NewsWidgetSettings).feedName
               : widget.type === 'weather'
@@ -427,9 +493,11 @@ function WidgetEditor({
               ? 'This Day in History'
               : 'Widget'}
           </span>
-          <span className="text-xs text-gray-500 dark:text-gray-400 uppercase">{widget.type === 'daily' ? 'widget' : widget.type}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 uppercase flex-shrink-0">{widget.type === 'daily' ? 'widget' : widget.type}</span>
         </button>
-        <Button variant="ghost" size="sm" onClick={onRemove} className="text-red-600 dark:text-red-400">
+
+        {/* Delete button */}
+        <Button variant="ghost" size="sm" onClick={onRemove} className="text-red-600 dark:text-red-400 flex-shrink-0">
           <Trash2 className="w-4 h-4" />
         </Button>
       </div>
