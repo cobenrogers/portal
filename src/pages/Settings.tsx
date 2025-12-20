@@ -1052,6 +1052,9 @@ function StockWidgetEditor({
 const DAILY_CONTENT_OPTIONS: { value: DailyContentType; label: string }[] = [
   { value: 'quote', label: 'Quote of the Day' },
   { value: 'joke', label: 'Joke of the Day' },
+  { value: 'word', label: 'Word of the Day' },
+  { value: 'history', label: 'This Day in History' },
+  { value: 'trivia', label: 'Daily Trivia' },
 ]
 
 function DailyWidgetEditor({

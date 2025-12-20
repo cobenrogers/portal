@@ -51,7 +51,7 @@ export interface LotteryWidgetSettings {
 }
 
 // Daily content types that can be enabled in the Daily widget
-export type DailyContentType = 'quote' | 'joke'
+export type DailyContentType = 'quote' | 'joke' | 'word' | 'history' | 'trivia'
 
 export interface DailyWidgetSettings {
   enabledContent: DailyContentType[]
@@ -191,10 +191,43 @@ export interface JokeData {
   cachedAt: string
 }
 
+// Word of the Day types
+export interface WordData {
+  word: string
+  definition: string
+  partOfSpeech: string
+  example?: string
+  cachedAt: string
+}
+
+// This Day in History types
+export interface HistoryEvent {
+  year: string
+  text: string
+}
+
+export interface HistoryData {
+  events: HistoryEvent[]
+  cachedAt: string
+}
+
+// Daily Trivia types
+export interface TriviaData {
+  question: string
+  correctAnswer: string
+  incorrectAnswers: string[]
+  category: string
+  difficulty: string
+  cachedAt: string
+}
+
 // Combined Daily data (for the consolidated Daily widget)
 export interface DailyData {
   quote?: QuoteData
   joke?: JokeData
+  word?: WordData
+  history?: HistoryData
+  trivia?: TriviaData
 }
 
 // API response types
