@@ -86,20 +86,24 @@ function AppContent() {
   const { isLoading: authLoading, isAuthenticated, isApproved } = useAuth()
   const [page, setPage] = useState<Page>('dashboard')
   const [settings, setSettings] = useState<PortalSettings | null>(null)
+  const [previewBackground, setPreviewBackground] = useState<BackgroundSettings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   // Apply theme when settings change
   const appliedTheme = useTheme(settings?.theme ?? 'light')
 
+  // Use preview background if set, otherwise use saved settings
+  const activeBackground = previewBackground ?? settings?.background
+
   // Compute background styles
   const backgroundStyle = useMemo(() => {
     const isDark = appliedTheme === 'dark'
-    return getBackgroundStyle(settings?.background, isDark)
-  }, [settings?.background, appliedTheme])
+    return getBackgroundStyle(activeBackground, isDark)
+  }, [activeBackground, appliedTheme])
 
   // Check if custom background is applied (for conditional default bg)
-  const hasCustomBackground = settings?.background?.type && settings.background.type !== 'none'
+  const hasCustomBackground = activeBackground?.type && activeBackground.type !== 'none'
 
   // User can edit if authenticated AND approved
   const canEdit = isAuthenticated && isApproved
@@ -120,7 +124,17 @@ function AppContent() {
 
   const handleSettingsSave = useCallback((newSettings: PortalSettings) => {
     setSettings(newSettings)
+    setPreviewBackground(null) // Clear preview on save
     setPage('dashboard')
+  }, [])
+
+  const handleSettingsBack = useCallback(() => {
+    setPreviewBackground(null) // Clear preview on cancel/back
+    setPage('dashboard')
+  }, [])
+
+  const handlePreviewBackground = useCallback((bg: BackgroundSettings | null) => {
+    setPreviewBackground(bg)
   }, [])
 
   // Show loading while auth is initializing
@@ -156,8 +170,11 @@ function AppContent() {
   if (page === 'settings') {
     return (
       <Settings
-        onBack={() => setPage('dashboard')}
+        onBack={handleSettingsBack}
         onSave={handleSettingsSave}
+        onPreviewBackground={handlePreviewBackground}
+        previewBackgroundStyle={backgroundStyle}
+        hasCustomBackground={hasCustomBackground}
       />
     )
   }

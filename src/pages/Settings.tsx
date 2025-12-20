@@ -26,6 +26,9 @@ import type {
 interface SettingsProps {
   onBack: () => void
   onSave: (settings: PortalSettings) => void
+  onPreviewBackground?: (bg: BackgroundSettings | null) => void
+  previewBackgroundStyle?: React.CSSProperties
+  hasCustomBackground?: boolean
 }
 
 interface WidgetTypeConfig {
@@ -144,15 +147,24 @@ function getDefaultWidgetSettings(type: WidgetType): WidgetConfig['settings'] {
   }
 }
 
-export function Settings({ onBack, onSave }: SettingsProps) {
+export function Settings({ onBack, onSave, onPreviewBackground, previewBackgroundStyle, hasCustomBackground }: SettingsProps) {
   const { isAuthenticated, isApproved, user } = useAuth()
   const [settings, setSettings] = useState<PortalSettings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isAppearanceExpanded, setIsAppearanceExpanded] = useState(false)
 
   // Apply theme (needed since Settings page renders independently)
   useTheme(settings?.theme ?? 'light')
+
+  // Update preview when background changes in settings
+  const handleBackgroundUpdate = useCallback((bg: BackgroundSettings) => {
+    if (settings) {
+      setSettings({ ...settings, background: bg })
+      onPreviewBackground?.(bg)
+    }
+  }, [settings, onPreviewBackground])
 
   // User must be authenticated and approved to access settings
   const canEdit = isAuthenticated && isApproved
@@ -328,7 +340,10 @@ export function Settings({ onBack, onSave }: SettingsProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div
+      className={`min-h-screen ${!hasCustomBackground ? 'bg-gray-100 dark:bg-gray-900' : ''}`}
+      style={previewBackgroundStyle}
+    >
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -357,6 +372,49 @@ export function Settings({ onBack, onSave }: SettingsProps) {
           <Unlock className="w-4 h-4" />
           Signed in as {user?.email}
         </div>
+
+        {/* Appearance - Collapsible, at top */}
+        <Card>
+          <button
+            onClick={() => setIsAppearanceExpanded(!isAppearanceExpanded)}
+            className="w-full"
+          >
+            <CardHeader className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <CardTitle>Appearance</CardTitle>
+                <ChevronDown className={cn(
+                  'w-5 h-5 text-gray-500 transition-transform',
+                  isAppearanceExpanded && 'rotate-180'
+                )} />
+              </div>
+            </CardHeader>
+          </button>
+          {isAppearanceExpanded && (
+            <CardContent className="space-y-6 pt-0">
+              <Select
+                label="Theme"
+                value={settings?.theme || 'light'}
+                onChange={(e) =>
+                  settings &&
+                  setSettings({ ...settings, theme: e.target.value as PortalSettings['theme'] })
+                }
+                options={[
+                  { value: 'light', label: 'Light' },
+                  { value: 'dark', label: 'Dark' },
+                  { value: 'system', label: 'System' },
+                ]}
+              />
+
+              <div className="border-t dark:border-gray-700 pt-4">
+                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Background</h3>
+                <BackgroundSettingsEditor
+                  background={settings?.background}
+                  onUpdate={handleBackgroundUpdate}
+                />
+              </div>
+            </CardContent>
+          )}
+        </Card>
 
         {/* Add Widget */}
         <AddWidgetSection onAddWidget={addWidget} />
@@ -389,36 +447,6 @@ export function Settings({ onBack, onSave }: SettingsProps) {
                 No widgets configured. Add one above.
               </p>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Theme & Background */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Appearance</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <Select
-              label="Theme"
-              value={settings?.theme || 'light'}
-              onChange={(e) =>
-                settings &&
-                setSettings({ ...settings, theme: e.target.value as PortalSettings['theme'] })
-              }
-              options={[
-                { value: 'light', label: 'Light' },
-                { value: 'dark', label: 'Dark' },
-                { value: 'system', label: 'System' },
-              ]}
-            />
-
-            <div className="border-t dark:border-gray-700 pt-4">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Background</h3>
-              <BackgroundSettingsEditor
-                background={settings?.background}
-                onUpdate={(bg) => settings && setSettings({ ...settings, background: bg })}
-              />
-            </div>
           </CardContent>
         </Card>
       </main>
