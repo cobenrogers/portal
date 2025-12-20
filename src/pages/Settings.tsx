@@ -37,6 +37,7 @@ const WIDGET_TYPES: WidgetTypeConfig[] = [
   { value: 'stocks', label: 'Stock Ticker' },
   { value: 'lottery', label: 'Lottery' },
   { value: 'daily', label: 'Daily' },
+  { value: 'history', label: 'This Day in History' },
 ]
 
 // Add Widget Section - simple list of widget types
@@ -135,6 +136,8 @@ function getDefaultWidgetSettings(type: WidgetType): WidgetConfig['settings'] {
       return {
         enabledContent: ['quote', 'joke'],
       } as DailyWidgetSettings
+    case 'history':
+      return {} // No settings for history widget
   }
 }
 
@@ -403,7 +406,8 @@ function WidgetEditor({
               widget.type === 'calendar' && 'bg-green-500',
               widget.type === 'stocks' && 'bg-purple-500',
               widget.type === 'lottery' && 'bg-red-500',
-              widget.type === 'daily' && 'bg-orange-500'
+              widget.type === 'daily' && 'bg-orange-500',
+              widget.type === 'history' && 'bg-amber-600'
             )}
           />
           <span className="font-medium text-gray-900 dark:text-gray-100">
@@ -419,6 +423,8 @@ function WidgetEditor({
               ? 'Lottery'
               : widget.type === 'daily'
               ? 'The Daily Widget'
+              : widget.type === 'history'
+              ? 'This Day in History'
               : 'Widget'}
           </span>
           <span className="text-xs text-gray-500 dark:text-gray-400 uppercase">{widget.type === 'daily' ? 'widget' : widget.type}</span>
@@ -460,7 +466,7 @@ function WidgetEditor({
               onUpdate={onUpdate}
             />
           )}
-          {widget.type === 'lottery' && (
+          {(widget.type === 'lottery' || widget.type === 'history') && (
             <p className="text-sm text-gray-500 dark:text-gray-400">
               No settings to configure for this widget.
             </p>
@@ -1053,7 +1059,6 @@ const DAILY_CONTENT_OPTIONS: { value: DailyContentType; label: string }[] = [
   { value: 'quote', label: 'Quote of the Day' },
   { value: 'joke', label: 'Joke of the Day' },
   { value: 'word', label: 'Word of the Day' },
-  { value: 'history', label: 'This Day in History' },
   { value: 'trivia', label: 'Daily Trivia' },
 ]
 

@@ -82,7 +82,7 @@ export function DailyWidget({ settings, onSettingsClick }: DailyWidgetProps) {
   const contentCount = settings.enabledContent?.length || 0
 
   // Order of content types for determining borders
-  const contentOrder: DailyContentType[] = ['quote', 'joke', 'word', 'history', 'trivia']
+  const contentOrder: DailyContentType[] = ['quote', 'joke', 'word', 'trivia']
 
   // Check if a content type is the last enabled one (no border needed after it)
   const isLastEnabled = (type: DailyContentType): boolean => {
@@ -145,20 +145,6 @@ export function DailyWidget({ settings, onSettingsClick }: DailyWidgetProps) {
                 <span className="text-gray-500 dark:text-gray-400 italic ml-1">({data.word.partOfSpeech})</span>
                 <span className="mx-1">—</span>
                 {data.word.definition}
-              </div>
-            </ContentSection>
-          )}
-
-          {/* This Day in History Section */}
-          {settings.enabledContent?.includes('history') && data.history && (
-            <ContentSection showBorder={contentCount > 1 && !isLastEnabled('history')}>
-              <ContentLabel>This Day in History:</ContentLabel>
-              <div className="text-gray-700 dark:text-gray-300 text-xs leading-relaxed space-y-0.5">
-                {data.history.events.map((event, idx) => (
-                  <div key={idx}>
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{event.year}:</span> {event.text}
-                  </div>
-                ))}
               </div>
             </ContentSection>
           )}

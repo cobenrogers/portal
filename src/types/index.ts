@@ -1,4 +1,4 @@
-export type WidgetType = 'news' | 'weather' | 'calendar' | 'stocks' | 'lottery' | 'daily'
+export type WidgetType = 'news' | 'weather' | 'calendar' | 'stocks' | 'lottery' | 'daily' | 'history'
 
 // Layout item type (replaces react-grid-layout Layout)
 export interface LayoutItem {
@@ -17,7 +17,7 @@ export interface WidgetConfig {
   order: number // Display order (1 = top-left, reading left-to-right, top-to-bottom)
 }
 
-export type WidgetSettings = NewsWidgetSettings | WeatherWidgetSettings | CalendarWidgetSettings | StockWidgetSettings | LotteryWidgetSettings | DailyWidgetSettings
+export type WidgetSettings = NewsWidgetSettings | WeatherWidgetSettings | CalendarWidgetSettings | StockWidgetSettings | LotteryWidgetSettings | DailyWidgetSettings | HistoryWidgetSettings
 
 export interface NewsWidgetSettings {
   feedUrl: string
@@ -51,7 +51,12 @@ export interface LotteryWidgetSettings {
 }
 
 // Daily content types that can be enabled in the Daily widget
-export type DailyContentType = 'quote' | 'joke' | 'word' | 'history' | 'trivia'
+export type DailyContentType = 'quote' | 'joke' | 'word' | 'trivia'
+
+// History widget has no settings
+export interface HistoryWidgetSettings {
+  // No settings - displays today's historical events
+}
 
 export interface DailyWidgetSettings {
   enabledContent: DailyContentType[]

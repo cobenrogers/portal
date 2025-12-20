@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useState, useRef, useEffect } from 'react'
-import { NewsWidget, WeatherWidget, CalendarWidget, StockWidget, LotteryWidget, DailyWidget } from './widgets'
+import { NewsWidget, WeatherWidget, CalendarWidget, StockWidget, LotteryWidget, DailyWidget, HistoryWidget } from './widgets'
 import { cn } from '@/lib/utils'
 import type {
   WidgetConfig,
@@ -139,6 +139,12 @@ export function Dashboard({
           return (
             <DailyWidget
               settings={widget.settings as DailyWidgetSettings}
+              onSettingsClick={handleSettings}
+            />
+          )
+        case 'history':
+          return (
+            <HistoryWidget
               onSettingsClick={handleSettings}
             />
           )

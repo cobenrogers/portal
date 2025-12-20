@@ -393,7 +393,10 @@
                 "settings": {
                     "enabledContent": [
                         "quote",
-                        "joke"
+                        "joke",
+                        "word",
+                        "history",
+                        "trivia"
                     ]
                 }
             }

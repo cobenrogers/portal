@@ -1,4 +1,4 @@
-import type { ApiResponse, FeedResponse, WeatherData, CalendarEvent, PortalSettings, GeoLocation, StockResponse, StockSearchResult, LotteryData, DailyData, DailyContentType } from '@/types'
+import type { ApiResponse, FeedResponse, WeatherData, CalendarEvent, PortalSettings, GeoLocation, StockResponse, StockSearchResult, LotteryData, DailyData, DailyContentType, HistoryData } from '@/types'
 
 // Use relative path for subdirectory deployment - resolves to /portal/api/ in production
 const API_BASE = import.meta.env.DEV ? '/api' : './api'
@@ -144,7 +144,7 @@ export async function fetchLotteryData(): Promise<LotteryData> {
   return response.data
 }
 
-// Daily Content API (consolidated quote/joke)
+// Daily Content API (consolidated quote/joke/word/trivia)
 export async function fetchDailyContent(contentTypes: DailyContentType[]): Promise<DailyData> {
   const response = await fetchApi<ApiResponse<DailyData>>(
     `/feeds/daily.php?content=${encodeURIComponent(contentTypes.join(','))}`
@@ -153,4 +153,15 @@ export async function fetchDailyContent(contentTypes: DailyContentType[]): Promi
     throw new Error(response.error || 'Failed to fetch daily content')
   }
   return response.data
+}
+
+// History API (This Day in History)
+export async function fetchHistoryData(): Promise<HistoryData> {
+  const response = await fetchApi<ApiResponse<{ history: HistoryData }>>(
+    '/feeds/daily.php?content=history'
+  )
+  if (!response.success || !response.data?.history) {
+    throw new Error(response.error || 'Failed to fetch history data')
+  }
+  return response.data.history
 }
