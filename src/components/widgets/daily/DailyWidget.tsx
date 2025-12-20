@@ -28,25 +28,52 @@ function ContentLabel({ children }: { children: React.ReactNode }) {
   )
 }
 
-// Trivia question with reveal functionality
+// Trivia question with multiple choice options and reveal functionality
 function TriviaQuestion({ trivia }: { trivia: TriviaData }) {
   const [revealed, setRevealed] = useState(false)
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
+
+  // Combine and shuffle answers (only on initial render)
+  const [shuffledAnswers] = useState(() => {
+    const allAnswers = [trivia.correctAnswer, ...trivia.incorrectAnswers]
+    return allAnswers.sort(() => Math.random() - 0.5)
+  })
+
+  const handleAnswerClick = (answer: string) => {
+    if (revealed) return
+    setSelectedAnswer(answer)
+    setRevealed(true)
+  }
 
   return (
     <div className="text-gray-700 dark:text-gray-300 text-xs leading-relaxed">
-      <div className="mb-1">{trivia.question}</div>
-      {revealed ? (
-        <div className="font-medium text-green-600 dark:text-green-400">
-          Answer: {trivia.correctAnswer}
-        </div>
-      ) : (
-        <button
-          onClick={() => setRevealed(true)}
-          className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 underline"
-        >
-          Reveal Answer
-        </button>
-      )}
+      <div className="mb-2">{trivia.question}</div>
+      <div className="space-y-1">
+        {shuffledAnswers.map((answer, idx) => {
+          const isCorrect = answer === trivia.correctAnswer
+          const isSelected = answer === selectedAnswer
+          const showResult = revealed
+
+          return (
+            <button
+              key={idx}
+              onClick={() => handleAnswerClick(answer)}
+              disabled={revealed}
+              className={`w-full text-left px-2 py-1 rounded border text-[11px] transition-colors ${
+                showResult
+                  ? isCorrect
+                    ? 'bg-green-100 dark:bg-green-900/30 border-green-500 text-green-700 dark:text-green-300'
+                    : isSelected
+                    ? 'bg-red-100 dark:bg-red-900/30 border-red-500 text-red-700 dark:text-red-300'
+                    : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-50'
+                  : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-750 cursor-pointer'
+              }`}
+            >
+              {answer}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

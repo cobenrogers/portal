@@ -23,6 +23,15 @@ $historyCacheFile = $cacheDir . 'history-cache.json';
 $triviaCacheFile = $cacheDir . 'trivia-cache.json';
 $today = date('Y-m-d'); // Now uses Mountain Time
 
+// Force cache refresh if requested (useful for debugging/admin)
+if (isset($_GET['refresh']) && $_GET['refresh'] === 'true') {
+    @unlink($quoteCacheFile);
+    @unlink($jokeCacheFile);
+    @unlink($wordCacheFile);
+    @unlink($historyCacheFile);
+    @unlink($triviaCacheFile);
+}
+
 // Parse requested content types
 $validTypes = ['quote', 'joke', 'word', 'history', 'trivia'];
 $requestedContent = isset($_GET['content']) ? explode(',', $_GET['content']) : ['quote', 'joke'];
