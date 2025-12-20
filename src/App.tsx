@@ -11,248 +11,162 @@ import type { PortalSettings, BackgroundSettings, HolidayBackground } from './ty
 
 type Page = 'dashboard' | 'settings'
 
-// Holiday background pattern configurations
+// SVG pattern generators for holiday backgrounds
+const createSvgPattern = (svg: string) => {
+  const encoded = encodeURIComponent(svg)
+  return `url("data:image/svg+xml,${encoded}")`
+}
+
+// Holiday SVG patterns
+const HOLIDAY_PATTERNS = {
+  // Stars pattern for New Year's
+  stars: (color: string, opacity: number) => `
+    <svg width="60" height="60" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="30,5 35,20 50,20 38,30 43,45 30,35 17,45 22,30 10,20 25,20" fill="${color}" opacity="${opacity}"/>
+      <polygon points="10,50 12,55 17,55 13,58 15,63 10,60 5,63 7,58 3,55 8,55" fill="${color}" opacity="${opacity * 0.7}"/>
+      <polygon points="50,45 52,50 57,50 53,53 55,58 50,55 45,58 47,53 43,50 48,50" fill="${color}" opacity="${opacity * 0.7}"/>
+    </svg>
+  `,
+  // Hearts pattern for Valentine's
+  hearts: (color: string, opacity: number) => `
+    <svg width="60" height="60" xmlns="http://www.w3.org/2000/svg">
+      <path d="M30,50 C15,35 5,25 15,15 C25,5 30,15 30,20 C30,15 35,5 45,15 C55,25 45,35 30,50 Z" fill="${color}" opacity="${opacity}"/>
+      <path d="M12,55 C7,50 3,47 7,43 C11,39 12,43 12,45 C12,43 13,39 17,43 C21,47 17,50 12,55 Z" fill="${color}" opacity="${opacity * 0.6}"/>
+    </svg>
+  `,
+  // Shamrock pattern for St. Patrick's
+  shamrock: (color: string, opacity: number) => `
+    <svg width="60" height="60" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="30" cy="18" rx="10" ry="12" fill="${color}" opacity="${opacity}"/>
+      <ellipse cx="20" cy="30" rx="10" ry="12" transform="rotate(-30 20 30)" fill="${color}" opacity="${opacity}"/>
+      <ellipse cx="40" cy="30" rx="10" ry="12" transform="rotate(30 40 30)" fill="${color}" opacity="${opacity}"/>
+      <rect x="28" y="35" width="4" height="20" fill="${color}" opacity="${opacity}"/>
+    </svg>
+  `,
+  // Easter eggs pattern
+  eggs: (colors: string[], opacity: number) => `
+    <svg width="80" height="80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="25" cy="30" rx="12" ry="16" fill="${colors[0]}" opacity="${opacity}"/>
+      <ellipse cx="25" cy="28" rx="8" ry="4" fill="${colors[1]}" opacity="${opacity * 0.5}"/>
+      <ellipse cx="60" cy="55" rx="10" ry="14" fill="${colors[2]}" opacity="${opacity}"/>
+      <line x1="55" y1="50" x2="65" y2="50" stroke="${colors[3]}" stroke-width="2" opacity="${opacity * 0.6}"/>
+      <line x1="55" y1="55" x2="65" y2="55" stroke="${colors[3]}" stroke-width="2" opacity="${opacity * 0.6}"/>
+    </svg>
+  `,
+  // American flag stars for Memorial/Independence
+  flagStars: (color: string, opacity: number) => `
+    <svg width="50" height="50" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="25,5 28,15 38,15 30,22 33,32 25,26 17,32 20,22 12,15 22,15" fill="${color}" opacity="${opacity}"/>
+    </svg>
+  `,
+  // Pumpkins for Halloween
+  pumpkins: (color1: string, color2: string, opacity: number) => `
+    <svg width="70" height="70" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="35" cy="40" rx="20" ry="18" fill="${color1}" opacity="${opacity}"/>
+      <ellipse cx="25" cy="40" rx="8" ry="16" fill="${color1}" opacity="${opacity * 0.8}"/>
+      <ellipse cx="45" cy="40" rx="8" ry="16" fill="${color1}" opacity="${opacity * 0.8}"/>
+      <rect x="32" y="20" width="6" height="10" rx="2" fill="${color2}" opacity="${opacity}"/>
+      <polygon points="30,30 35,22 40,30" fill="${color2}" opacity="${opacity * 0.6}"/>
+    </svg>
+  `,
+  // Maple leaves for Thanksgiving
+  mapleLeaf: (color: string, opacity: number) => `
+    <svg width="60" height="60" xmlns="http://www.w3.org/2000/svg">
+      <path d="M30,55 L28,40 L15,45 L22,35 L10,30 L22,28 L18,15 L28,25 L30,10 L32,25 L42,15 L38,28 L50,30 L38,35 L45,45 L32,40 L30,55 Z" fill="${color}" opacity="${opacity}"/>
+    </svg>
+  `,
+  // Christmas trees
+  christmasTree: (treeColor: string, starColor: string, opacity: number) => `
+    <svg width="60" height="70" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="30,8 45,30 38,30 50,50 35,50 35,60 25,60 25,50 10,50 22,30 15,30" fill="${treeColor}" opacity="${opacity}"/>
+      <polygon points="30,3 33,10 27,10" fill="${starColor}" opacity="${opacity}"/>
+      <circle cx="25" cy="35" r="2" fill="#f44336" opacity="${opacity}"/>
+      <circle cx="35" cy="40" r="2" fill="#ffd700" opacity="${opacity}"/>
+      <circle cx="28" cy="48" r="2" fill="#2196f3" opacity="${opacity}"/>
+    </svg>
+  `,
+  // Snowflakes for Winter
+  snowflake: (color: string, opacity: number) => `
+    <svg width="50" height="50" xmlns="http://www.w3.org/2000/svg">
+      <line x1="25" y1="5" x2="25" y2="45" stroke="${color}" stroke-width="2" opacity="${opacity}"/>
+      <line x1="5" y1="25" x2="45" y2="25" stroke="${color}" stroke-width="2" opacity="${opacity}"/>
+      <line x1="10" y1="10" x2="40" y2="40" stroke="${color}" stroke-width="1.5" opacity="${opacity}"/>
+      <line x1="40" y1="10" x2="10" y2="40" stroke="${color}" stroke-width="1.5" opacity="${opacity}"/>
+      <line x1="25" y1="10" x2="20" y2="5" stroke="${color}" stroke-width="1" opacity="${opacity}"/>
+      <line x1="25" y1="10" x2="30" y2="5" stroke="${color}" stroke-width="1" opacity="${opacity}"/>
+      <line x1="25" y1="40" x2="20" y2="45" stroke="${color}" stroke-width="1" opacity="${opacity}"/>
+      <line x1="25" y1="40" x2="30" y2="45" stroke="${color}" stroke-width="1" opacity="${opacity}"/>
+      <line x1="10" y1="25" x2="5" y2="20" stroke="${color}" stroke-width="1" opacity="${opacity}"/>
+      <line x1="10" y1="25" x2="5" y2="30" stroke="${color}" stroke-width="1" opacity="${opacity}"/>
+      <line x1="40" y1="25" x2="45" y2="20" stroke="${color}" stroke-width="1" opacity="${opacity}"/>
+      <line x1="40" y1="25" x2="45" y2="30" stroke="${color}" stroke-width="1" opacity="${opacity}"/>
+    </svg>
+  `,
+  // Fireworks for Independence Day
+  firework: (colors: string[], opacity: number) => `
+    <svg width="80" height="80" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="40" r="3" fill="${colors[0]}" opacity="${opacity}"/>
+      <line x1="40" y1="40" x2="40" y2="15" stroke="${colors[0]}" stroke-width="2" opacity="${opacity}"/>
+      <line x1="40" y1="40" x2="40" y2="65" stroke="${colors[1]}" stroke-width="2" opacity="${opacity}"/>
+      <line x1="40" y1="40" x2="15" y2="40" stroke="${colors[2]}" stroke-width="2" opacity="${opacity}"/>
+      <line x1="40" y1="40" x2="65" y2="40" stroke="${colors[0]}" stroke-width="2" opacity="${opacity}"/>
+      <line x1="40" y1="40" x2="22" y2="22" stroke="${colors[1]}" stroke-width="1.5" opacity="${opacity}"/>
+      <line x1="40" y1="40" x2="58" y2="58" stroke="${colors[2]}" stroke-width="1.5" opacity="${opacity}"/>
+      <line x1="40" y1="40" x2="58" y2="22" stroke="${colors[0]}" stroke-width="1.5" opacity="${opacity}"/>
+      <line x1="40" y1="40" x2="22" y2="58" stroke="${colors[1]}" stroke-width="1.5" opacity="${opacity}"/>
+      <circle cx="40" cy="18" r="2" fill="${colors[0]}" opacity="${opacity}"/>
+      <circle cx="40" cy="62" r="2" fill="${colors[1]}" opacity="${opacity}"/>
+      <circle cx="18" cy="40" r="2" fill="${colors[2]}" opacity="${opacity}"/>
+      <circle cx="62" cy="40" r="2" fill="${colors[0]}" opacity="${opacity}"/>
+    </svg>
+  `,
+}
+
+// Holiday background pattern configurations with SVG patterns
 const HOLIDAY_GRADIENTS: Record<HolidayBackground, { light: string; dark: string }> = {
   'new-years': {
-    // Sparkle/starburst pattern with gold accents
-    light: `
-      radial-gradient(circle at 20% 30%, rgba(255, 215, 0, 0.3) 0%, transparent 8%),
-      radial-gradient(circle at 80% 20%, rgba(255, 215, 0, 0.25) 0%, transparent 6%),
-      radial-gradient(circle at 40% 70%, rgba(255, 215, 0, 0.2) 0%, transparent 10%),
-      radial-gradient(circle at 90% 80%, rgba(255, 215, 0, 0.3) 0%, transparent 7%),
-      radial-gradient(circle at 10% 90%, rgba(255, 215, 0, 0.2) 0%, transparent 5%),
-      radial-gradient(circle at 60% 10%, rgba(192, 192, 192, 0.3) 0%, transparent 4%),
-      radial-gradient(circle at 30% 50%, rgba(192, 192, 192, 0.2) 0%, transparent 6%),
-      linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)
-    `,
-    dark: `
-      radial-gradient(circle at 20% 30%, rgba(255, 215, 0, 0.2) 0%, transparent 8%),
-      radial-gradient(circle at 80% 20%, rgba(255, 215, 0, 0.15) 0%, transparent 6%),
-      radial-gradient(circle at 40% 70%, rgba(255, 215, 0, 0.12) 0%, transparent 10%),
-      radial-gradient(circle at 90% 80%, rgba(255, 215, 0, 0.2) 0%, transparent 7%),
-      radial-gradient(circle at 10% 90%, rgba(255, 215, 0, 0.12) 0%, transparent 5%),
-      radial-gradient(circle at 60% 10%, rgba(192, 192, 192, 0.15) 0%, transparent 4%),
-      radial-gradient(circle at 30% 50%, rgba(192, 192, 192, 0.1) 0%, transparent 6%),
-      linear-gradient(135deg, #0a0a15 0%, #0d1525 50%, #0a2040 100%)
-    `,
+    light: `${createSvgPattern(HOLIDAY_PATTERNS.stars('#ffd700', 0.3))}, linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)`,
+    dark: `${createSvgPattern(HOLIDAY_PATTERNS.stars('#ffd700', 0.2))}, linear-gradient(135deg, #0a0a15 0%, #0d1525 50%, #0a2040 100%)`,
   },
   'valentines': {
-    // Soft hearts pattern with pink tones
-    light: `
-      radial-gradient(circle at 15% 25%, rgba(244, 67, 54, 0.15) 0%, transparent 12%),
-      radial-gradient(circle at 85% 15%, rgba(233, 30, 99, 0.12) 0%, transparent 10%),
-      radial-gradient(circle at 25% 75%, rgba(244, 67, 54, 0.1) 0%, transparent 15%),
-      radial-gradient(circle at 75% 65%, rgba(233, 30, 99, 0.15) 0%, transparent 8%),
-      radial-gradient(circle at 50% 40%, rgba(255, 105, 180, 0.1) 0%, transparent 20%),
-      radial-gradient(circle at 90% 90%, rgba(244, 67, 54, 0.12) 0%, transparent 10%),
-      linear-gradient(135deg, #fce4ec 0%, #f8bbd9 50%, #f48fb1 100%)
-    `,
-    dark: `
-      radial-gradient(circle at 15% 25%, rgba(244, 67, 54, 0.2) 0%, transparent 12%),
-      radial-gradient(circle at 85% 15%, rgba(233, 30, 99, 0.15) 0%, transparent 10%),
-      radial-gradient(circle at 25% 75%, rgba(244, 67, 54, 0.12) 0%, transparent 15%),
-      radial-gradient(circle at 75% 65%, rgba(233, 30, 99, 0.18) 0%, transparent 8%),
-      radial-gradient(circle at 50% 40%, rgba(255, 105, 180, 0.1) 0%, transparent 20%),
-      radial-gradient(circle at 90% 90%, rgba(244, 67, 54, 0.15) 0%, transparent 10%),
-      linear-gradient(135deg, #4a1a2c 0%, #5d1a38 50%, #6a1b4d 100%)
-    `,
+    light: `${createSvgPattern(HOLIDAY_PATTERNS.hearts('#e91e63', 0.15))}, linear-gradient(135deg, #fce4ec 0%, #f8bbd9 50%, #f48fb1 100%)`,
+    dark: `${createSvgPattern(HOLIDAY_PATTERNS.hearts('#ff4081', 0.2))}, linear-gradient(135deg, #4a1a2c 0%, #5d1a38 50%, #6a1b4d 100%)`,
   },
   'st-patricks': {
-    // Clover/shamrock-inspired pattern with green dots
-    light: `
-      radial-gradient(circle at 10% 20%, rgba(46, 125, 50, 0.2) 0%, transparent 8%),
-      radial-gradient(circle at 30% 60%, rgba(76, 175, 80, 0.15) 0%, transparent 10%),
-      radial-gradient(circle at 70% 30%, rgba(46, 125, 50, 0.18) 0%, transparent 7%),
-      radial-gradient(circle at 90% 70%, rgba(76, 175, 80, 0.2) 0%, transparent 12%),
-      radial-gradient(circle at 50% 90%, rgba(46, 125, 50, 0.12) 0%, transparent 9%),
-      radial-gradient(circle at 20% 80%, rgba(255, 215, 0, 0.1) 0%, transparent 5%),
-      radial-gradient(circle at 80% 10%, rgba(255, 215, 0, 0.08) 0%, transparent 4%),
-      linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%)
-    `,
-    dark: `
-      radial-gradient(circle at 10% 20%, rgba(46, 125, 50, 0.25) 0%, transparent 8%),
-      radial-gradient(circle at 30% 60%, rgba(76, 175, 80, 0.2) 0%, transparent 10%),
-      radial-gradient(circle at 70% 30%, rgba(46, 125, 50, 0.22) 0%, transparent 7%),
-      radial-gradient(circle at 90% 70%, rgba(76, 175, 80, 0.25) 0%, transparent 12%),
-      radial-gradient(circle at 50% 90%, rgba(46, 125, 50, 0.15) 0%, transparent 9%),
-      radial-gradient(circle at 20% 80%, rgba(255, 215, 0, 0.12) 0%, transparent 5%),
-      radial-gradient(circle at 80% 10%, rgba(255, 215, 0, 0.1) 0%, transparent 4%),
-      linear-gradient(135deg, #1a3d1a 0%, #1e4620 50%, #2e5a2e 100%)
-    `,
+    light: `${createSvgPattern(HOLIDAY_PATTERNS.shamrock('#2e7d32', 0.15))}, linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%)`,
+    dark: `${createSvgPattern(HOLIDAY_PATTERNS.shamrock('#4caf50', 0.2))}, linear-gradient(135deg, #1a3d1a 0%, #1e4620 50%, #2e5a2e 100%)`,
   },
   'easter': {
-    // Pastel eggs pattern with soft colored dots
-    light: `
-      radial-gradient(ellipse 8% 12% at 15% 30%, rgba(225, 190, 231, 0.4) 0%, transparent 100%),
-      radial-gradient(ellipse 6% 10% at 75% 20%, rgba(178, 235, 242, 0.35) 0%, transparent 100%),
-      radial-gradient(ellipse 7% 11% at 40% 70%, rgba(197, 225, 165, 0.4) 0%, transparent 100%),
-      radial-gradient(ellipse 8% 12% at 85% 75%, rgba(255, 224, 178, 0.35) 0%, transparent 100%),
-      radial-gradient(ellipse 6% 9% at 25% 85%, rgba(248, 187, 208, 0.3) 0%, transparent 100%),
-      radial-gradient(ellipse 7% 10% at 60% 15%, rgba(179, 229, 252, 0.35) 0%, transparent 100%),
-      linear-gradient(135deg, #fff3e0 0%, #ffe0b2 25%, #e1bee7 50%, #b2ebf2 75%, #c5e1a5 100%)
-    `,
-    dark: `
-      radial-gradient(ellipse 8% 12% at 15% 30%, rgba(156, 39, 176, 0.2) 0%, transparent 100%),
-      radial-gradient(ellipse 6% 10% at 75% 20%, rgba(0, 188, 212, 0.18) 0%, transparent 100%),
-      radial-gradient(ellipse 7% 11% at 40% 70%, rgba(139, 195, 74, 0.2) 0%, transparent 100%),
-      radial-gradient(ellipse 8% 12% at 85% 75%, rgba(255, 152, 0, 0.18) 0%, transparent 100%),
-      radial-gradient(ellipse 6% 9% at 25% 85%, rgba(233, 30, 99, 0.15) 0%, transparent 100%),
-      radial-gradient(ellipse 7% 10% at 60% 15%, rgba(33, 150, 243, 0.18) 0%, transparent 100%),
-      linear-gradient(135deg, #3d2e1f 0%, #3d2e1f 25%, #2d1f3d 50%, #1f3d3d 75%, #2d3d1f 100%)
-    `,
+    light: `${createSvgPattern(HOLIDAY_PATTERNS.eggs(['#e1bee7', '#b2ebf2', '#c5e1a5', '#7e57c2'], 0.4))}, linear-gradient(135deg, #fff3e0 0%, #ffe0b2 25%, #e1bee7 50%, #b2ebf2 75%, #c5e1a5 100%)`,
+    dark: `${createSvgPattern(HOLIDAY_PATTERNS.eggs(['#9c27b0', '#00bcd4', '#8bc34a', '#5e35b1'], 0.25))}, linear-gradient(135deg, #3d2e1f 0%, #3d2e1f 25%, #2d1f3d 50%, #1f3d3d 75%, #2d3d1f 100%)`,
   },
   'memorial': {
-    // Stars and stripes subtle pattern
-    light: `
-      radial-gradient(circle at 10% 15%, rgba(33, 150, 243, 0.15) 0%, transparent 6%),
-      radial-gradient(circle at 25% 10%, rgba(33, 150, 243, 0.12) 0%, transparent 5%),
-      radial-gradient(circle at 15% 25%, rgba(33, 150, 243, 0.1) 0%, transparent 4%),
-      repeating-linear-gradient(0deg, transparent 0px, transparent 40px, rgba(244, 67, 54, 0.08) 40px, rgba(244, 67, 54, 0.08) 50px),
-      linear-gradient(135deg, #e3f2fd 0%, #ffffff 50%, #ffebee 100%)
-    `,
-    dark: `
-      radial-gradient(circle at 10% 15%, rgba(33, 150, 243, 0.2) 0%, transparent 6%),
-      radial-gradient(circle at 25% 10%, rgba(33, 150, 243, 0.15) 0%, transparent 5%),
-      radial-gradient(circle at 15% 25%, rgba(33, 150, 243, 0.12) 0%, transparent 4%),
-      repeating-linear-gradient(0deg, transparent 0px, transparent 40px, rgba(244, 67, 54, 0.1) 40px, rgba(244, 67, 54, 0.1) 50px),
-      linear-gradient(135deg, #1a2744 0%, #1e293b 50%, #2d1a24 100%)
-    `,
+    light: `${createSvgPattern(HOLIDAY_PATTERNS.flagStars('#1565c0', 0.15))}, repeating-linear-gradient(0deg, transparent 0px, transparent 20px, rgba(244, 67, 54, 0.1) 20px, rgba(244, 67, 54, 0.1) 25px), linear-gradient(135deg, #e3f2fd 0%, #ffffff 50%, #ffebee 100%)`,
+    dark: `${createSvgPattern(HOLIDAY_PATTERNS.flagStars('#42a5f5', 0.2))}, repeating-linear-gradient(0deg, transparent 0px, transparent 20px, rgba(244, 67, 54, 0.12) 20px, rgba(244, 67, 54, 0.12) 25px), linear-gradient(135deg, #1a2744 0%, #1e293b 50%, #2d1a24 100%)`,
   },
   'independence': {
-    // Fireworks/starburst pattern with red, white, blue
-    light: `
-      radial-gradient(circle at 20% 20%, rgba(244, 67, 54, 0.2) 0%, transparent 15%),
-      radial-gradient(circle at 80% 30%, rgba(33, 150, 243, 0.2) 0%, transparent 12%),
-      radial-gradient(circle at 50% 60%, rgba(255, 255, 255, 0.3) 0%, transparent 10%),
-      radial-gradient(circle at 30% 80%, rgba(33, 150, 243, 0.15) 0%, transparent 18%),
-      radial-gradient(circle at 70% 70%, rgba(244, 67, 54, 0.18) 0%, transparent 14%),
-      radial-gradient(circle at 10% 50%, rgba(255, 255, 255, 0.2) 0%, transparent 8%),
-      radial-gradient(circle at 90% 90%, rgba(33, 150, 243, 0.12) 0%, transparent 10%),
-      linear-gradient(135deg, #e3f2fd 0%, #ffffff 33%, #ffebee 66%, #e3f2fd 100%)
-    `,
-    dark: `
-      radial-gradient(circle at 20% 20%, rgba(244, 67, 54, 0.25) 0%, transparent 15%),
-      radial-gradient(circle at 80% 30%, rgba(33, 150, 243, 0.25) 0%, transparent 12%),
-      radial-gradient(circle at 50% 60%, rgba(255, 255, 255, 0.15) 0%, transparent 10%),
-      radial-gradient(circle at 30% 80%, rgba(33, 150, 243, 0.2) 0%, transparent 18%),
-      radial-gradient(circle at 70% 70%, rgba(244, 67, 54, 0.22) 0%, transparent 14%),
-      radial-gradient(circle at 10% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 8%),
-      radial-gradient(circle at 90% 90%, rgba(33, 150, 243, 0.15) 0%, transparent 10%),
-      linear-gradient(135deg, #1a2744 0%, #1e293b 33%, #3d1a24 66%, #1a2744 100%)
-    `,
+    light: `${createSvgPattern(HOLIDAY_PATTERNS.firework(['#f44336', '#ffffff', '#2196f3'], 0.25))}, linear-gradient(135deg, #e3f2fd 0%, #ffffff 33%, #ffebee 66%, #e3f2fd 100%)`,
+    dark: `${createSvgPattern(HOLIDAY_PATTERNS.firework(['#ef5350', '#ffffff', '#42a5f5'], 0.3))}, linear-gradient(135deg, #1a2744 0%, #1e293b 33%, #3d1a24 66%, #1a2744 100%)`,
   },
   'labor': {
-    // Industrial/worker themed with gear-like circles
-    light: `
-      radial-gradient(circle at 25% 25%, rgba(255, 152, 0, 0.15) 0%, transparent 20%),
-      radial-gradient(circle at 75% 75%, rgba(121, 85, 72, 0.12) 0%, transparent 18%),
-      radial-gradient(circle at 50% 30%, rgba(255, 193, 7, 0.1) 0%, transparent 15%),
-      radial-gradient(circle at 20% 70%, rgba(121, 85, 72, 0.1) 0%, transparent 12%),
-      radial-gradient(circle at 80% 40%, rgba(255, 152, 0, 0.12) 0%, transparent 16%),
-      linear-gradient(135deg, #fff8e1 0%, #ffecb3 50%, #ffe082 100%)
-    `,
-    dark: `
-      radial-gradient(circle at 25% 25%, rgba(255, 152, 0, 0.2) 0%, transparent 20%),
-      radial-gradient(circle at 75% 75%, rgba(121, 85, 72, 0.18) 0%, transparent 18%),
-      radial-gradient(circle at 50% 30%, rgba(255, 193, 7, 0.15) 0%, transparent 15%),
-      radial-gradient(circle at 20% 70%, rgba(121, 85, 72, 0.15) 0%, transparent 12%),
-      radial-gradient(circle at 80% 40%, rgba(255, 152, 0, 0.18) 0%, transparent 16%),
-      linear-gradient(135deg, #3d3520 0%, #4a3f20 50%, #5c4d20 100%)
-    `,
+    light: `linear-gradient(135deg, #fff8e1 0%, #ffecb3 50%, #ffe082 100%)`,
+    dark: `linear-gradient(135deg, #3d3520 0%, #4a3f20 50%, #5c4d20 100%)`,
   },
   'halloween': {
-    // Spooky diagonal stripes and scattered dots
-    light: `
-      radial-gradient(circle at 15% 20%, rgba(0, 0, 0, 0.08) 0%, transparent 8%),
-      radial-gradient(circle at 85% 30%, rgba(156, 39, 176, 0.1) 0%, transparent 10%),
-      radial-gradient(circle at 40% 80%, rgba(0, 0, 0, 0.06) 0%, transparent 12%),
-      radial-gradient(circle at 70% 60%, rgba(156, 39, 176, 0.08) 0%, transparent 8%),
-      repeating-linear-gradient(45deg, transparent 0px, transparent 20px, rgba(0, 0, 0, 0.03) 20px, rgba(0, 0, 0, 0.03) 22px),
-      linear-gradient(135deg, #fff3e0 0%, #ffcc80 50%, #ff9800 100%)
-    `,
-    dark: `
-      radial-gradient(circle at 15% 20%, rgba(255, 152, 0, 0.15) 0%, transparent 8%),
-      radial-gradient(circle at 85% 30%, rgba(156, 39, 176, 0.2) 0%, transparent 10%),
-      radial-gradient(circle at 40% 80%, rgba(255, 152, 0, 0.12) 0%, transparent 12%),
-      radial-gradient(circle at 70% 60%, rgba(156, 39, 176, 0.15) 0%, transparent 8%),
-      repeating-linear-gradient(45deg, transparent 0px, transparent 20px, rgba(255, 152, 0, 0.05) 20px, rgba(255, 152, 0, 0.05) 22px),
-      linear-gradient(135deg, #1a1a1a 0%, #2d1f0f 50%, #3d2810 100%)
-    `,
+    light: `${createSvgPattern(HOLIDAY_PATTERNS.pumpkins('#ff9800', '#4a2c00', 0.2))}, linear-gradient(135deg, #fff3e0 0%, #ffcc80 50%, #ff9800 100%)`,
+    dark: `${createSvgPattern(HOLIDAY_PATTERNS.pumpkins('#ff9800', '#2d1f0f', 0.25))}, linear-gradient(135deg, #1a1a1a 0%, #2d1f0f 50%, #3d2810 100%)`,
   },
   'thanksgiving': {
-    // Autumn leaves pattern with warm colored dots
-    light: `
-      radial-gradient(ellipse 10% 8% at 20% 30%, rgba(230, 81, 0, 0.2) 0%, transparent 100%),
-      radial-gradient(ellipse 8% 10% at 70% 20%, rgba(191, 54, 12, 0.15) 0%, transparent 100%),
-      radial-gradient(ellipse 12% 9% at 40% 70%, rgba(255, 152, 0, 0.18) 0%, transparent 100%),
-      radial-gradient(ellipse 9% 11% at 85% 60%, rgba(121, 85, 72, 0.15) 0%, transparent 100%),
-      radial-gradient(ellipse 7% 9% at 15% 80%, rgba(230, 81, 0, 0.12) 0%, transparent 100%),
-      radial-gradient(ellipse 11% 8% at 60% 90%, rgba(191, 54, 12, 0.1) 0%, transparent 100%),
-      linear-gradient(135deg, #fff8e1 0%, #ffe0b2 33%, #ffcc80 66%, #d7ccc8 100%)
-    `,
-    dark: `
-      radial-gradient(ellipse 10% 8% at 20% 30%, rgba(230, 81, 0, 0.25) 0%, transparent 100%),
-      radial-gradient(ellipse 8% 10% at 70% 20%, rgba(191, 54, 12, 0.2) 0%, transparent 100%),
-      radial-gradient(ellipse 12% 9% at 40% 70%, rgba(255, 152, 0, 0.22) 0%, transparent 100%),
-      radial-gradient(ellipse 9% 11% at 85% 60%, rgba(121, 85, 72, 0.2) 0%, transparent 100%),
-      radial-gradient(ellipse 7% 9% at 15% 80%, rgba(230, 81, 0, 0.15) 0%, transparent 100%),
-      radial-gradient(ellipse 11% 8% at 60% 90%, rgba(191, 54, 12, 0.12) 0%, transparent 100%),
-      linear-gradient(135deg, #2d2518 0%, #3d2e1a 33%, #4a3620 66%, #3d3530 100%)
-    `,
+    light: `${createSvgPattern(HOLIDAY_PATTERNS.mapleLeaf('#e65100', 0.15))}, linear-gradient(135deg, #fff8e1 0%, #ffe0b2 33%, #ffcc80 66%, #d7ccc8 100%)`,
+    dark: `${createSvgPattern(HOLIDAY_PATTERNS.mapleLeaf('#ff9800', 0.2))}, linear-gradient(135deg, #2d2518 0%, #3d2e1a 33%, #4a3620 66%, #3d3530 100%)`,
   },
   'christmas': {
-    // Christmas ornament/light pattern with red and green
-    light: `
-      radial-gradient(circle at 10% 20%, rgba(211, 47, 47, 0.15) 0%, transparent 8%),
-      radial-gradient(circle at 30% 50%, rgba(46, 125, 50, 0.12) 0%, transparent 10%),
-      radial-gradient(circle at 60% 15%, rgba(211, 47, 47, 0.1) 0%, transparent 6%),
-      radial-gradient(circle at 80% 40%, rgba(46, 125, 50, 0.15) 0%, transparent 9%),
-      radial-gradient(circle at 20% 80%, rgba(255, 215, 0, 0.12) 0%, transparent 5%),
-      radial-gradient(circle at 90% 70%, rgba(211, 47, 47, 0.12) 0%, transparent 7%),
-      radial-gradient(circle at 50% 90%, rgba(46, 125, 50, 0.1) 0%, transparent 8%),
-      radial-gradient(circle at 70% 85%, rgba(255, 215, 0, 0.1) 0%, transparent 4%),
-      linear-gradient(135deg, #e8f5e9 0%, #ffffff 50%, #ffebee 100%)
-    `,
-    dark: `
-      radial-gradient(circle at 10% 20%, rgba(211, 47, 47, 0.25) 0%, transparent 8%),
-      radial-gradient(circle at 30% 50%, rgba(46, 125, 50, 0.2) 0%, transparent 10%),
-      radial-gradient(circle at 60% 15%, rgba(211, 47, 47, 0.18) 0%, transparent 6%),
-      radial-gradient(circle at 80% 40%, rgba(46, 125, 50, 0.22) 0%, transparent 9%),
-      radial-gradient(circle at 20% 80%, rgba(255, 215, 0, 0.15) 0%, transparent 5%),
-      radial-gradient(circle at 90% 70%, rgba(211, 47, 47, 0.2) 0%, transparent 7%),
-      radial-gradient(circle at 50% 90%, rgba(46, 125, 50, 0.15) 0%, transparent 8%),
-      radial-gradient(circle at 70% 85%, rgba(255, 215, 0, 0.12) 0%, transparent 4%),
-      linear-gradient(135deg, #1a2e1a 0%, #1e293b 50%, #2e1a1a 100%)
-    `,
+    light: `${createSvgPattern(HOLIDAY_PATTERNS.christmasTree('#2e7d32', '#ffd700', 0.2))}, linear-gradient(135deg, #e8f5e9 0%, #ffffff 50%, #ffebee 100%)`,
+    dark: `${createSvgPattern(HOLIDAY_PATTERNS.christmasTree('#4caf50', '#ffd700', 0.25))}, linear-gradient(135deg, #1a2e1a 0%, #1e293b 50%, #2e1a1a 100%)`,
   },
   'winter': {
-    // Snowflake pattern with white/blue dots
-    light: `
-      radial-gradient(circle at 10% 15%, rgba(255, 255, 255, 0.8) 0%, transparent 3%),
-      radial-gradient(circle at 25% 45%, rgba(200, 230, 255, 0.6) 0%, transparent 4%),
-      radial-gradient(circle at 45% 20%, rgba(255, 255, 255, 0.7) 0%, transparent 2%),
-      radial-gradient(circle at 70% 35%, rgba(200, 230, 255, 0.5) 0%, transparent 5%),
-      radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.6) 0%, transparent 3%),
-      radial-gradient(circle at 15% 75%, rgba(200, 230, 255, 0.5) 0%, transparent 4%),
-      radial-gradient(circle at 40% 85%, rgba(255, 255, 255, 0.7) 0%, transparent 2%),
-      radial-gradient(circle at 60% 65%, rgba(200, 230, 255, 0.6) 0%, transparent 3%),
-      radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.5) 0%, transparent 4%),
-      radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 2%),
-      linear-gradient(135deg, #e3f2fd 0%, #e1f5fe 50%, #f3e5f5 100%)
-    `,
-    dark: `
-      radial-gradient(circle at 10% 15%, rgba(255, 255, 255, 0.3) 0%, transparent 3%),
-      radial-gradient(circle at 25% 45%, rgba(200, 230, 255, 0.2) 0%, transparent 4%),
-      radial-gradient(circle at 45% 20%, rgba(255, 255, 255, 0.25) 0%, transparent 2%),
-      radial-gradient(circle at 70% 35%, rgba(200, 230, 255, 0.18) 0%, transparent 5%),
-      radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.22) 0%, transparent 3%),
-      radial-gradient(circle at 15% 75%, rgba(200, 230, 255, 0.15) 0%, transparent 4%),
-      radial-gradient(circle at 40% 85%, rgba(255, 255, 255, 0.2) 0%, transparent 2%),
-      radial-gradient(circle at 60% 65%, rgba(200, 230, 255, 0.18) 0%, transparent 3%),
-      radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.15) 0%, transparent 4%),
-      radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.12) 0%, transparent 2%),
-      linear-gradient(135deg, #1a2744 0%, #1a3344 50%, #2d1f3d 100%)
-    `,
+    light: `${createSvgPattern(HOLIDAY_PATTERNS.snowflake('#90caf9', 0.4))}, linear-gradient(135deg, #e3f2fd 0%, #e1f5fe 50%, #f3e5f5 100%)`,
+    dark: `${createSvgPattern(HOLIDAY_PATTERNS.snowflake('#90caf9', 0.25))}, linear-gradient(135deg, #1a2744 0%, #1a3344 50%, #2d1f3d 100%)`,
   },
 }
 
