@@ -36,27 +36,34 @@ interface WidgetTypeConfig {
   label: string
 }
 
-const WIDGET_TYPES: WidgetTypeConfig[] = [
+// Main widget types (non-daily)
+const MAIN_WIDGET_TYPES: WidgetTypeConfig[] = [
   { value: 'news', label: 'News Feed' },
   { value: 'weather', label: 'Weather' },
   { value: 'calendar', label: 'Calendar' },
   { value: 'stocks', label: 'Stock Ticker' },
   { value: 'lottery', label: 'Lottery' },
-  { value: 'daily', label: 'Daily' },
+]
+
+// Daily widget types (shown when Daily category is expanded)
+const DAILY_WIDGET_TYPES: WidgetTypeConfig[] = [
+  { value: 'daily', label: 'The Daily Widget' },
   { value: 'history', label: 'This Day in History' },
   { value: 'trivia', label: 'Daily Trivia' },
 ]
 
-// Add Widget Section - simple list of widget types
+// Add Widget Section - with expandable Daily category
 function AddWidgetSection({ onAddWidget }: { onAddWidget: (type: WidgetType) => void }) {
+  const [dailyExpanded, setDailyExpanded] = useState(false)
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Add Widget</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
         <div className="flex flex-wrap gap-2">
-          {WIDGET_TYPES.map((type) => (
+          {MAIN_WIDGET_TYPES.map((type) => (
             <Button
               key={type.value}
               variant="outline"
@@ -67,7 +74,38 @@ function AddWidgetSection({ onAddWidget }: { onAddWidget: (type: WidgetType) => 
               {type.label}
             </Button>
           ))}
+          {/* Daily category button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setDailyExpanded(!dailyExpanded)}
+            className={dailyExpanded ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500' : ''}
+          >
+            {dailyExpanded ? <ChevronUp className="w-4 h-4 mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
+            Daily
+          </Button>
         </div>
+
+        {/* Expanded Daily widget options */}
+        {dailyExpanded && (
+          <div className="flex flex-wrap gap-2 pl-4 pt-2 border-l-2 border-orange-300 dark:border-orange-700">
+            {DAILY_WIDGET_TYPES.map((type) => (
+              <Button
+                key={type.value}
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onAddWidget(type.value)
+                  setDailyExpanded(false)
+                }}
+                className="border-orange-300 dark:border-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                {type.label}
+              </Button>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   )
@@ -311,6 +349,28 @@ export function Settings({ onBack, onSave, onPreviewBackground, previewBackgroun
     })
   }, [settings])
 
+  // Reorder widget via drag-and-drop (move from one index to another)
+  const reorderWidget = useCallback((fromIndex: number, toIndex: number) => {
+    if (!settings || fromIndex === toIndex) return
+
+    const widgets = [...settings.dashboardLayout.widgets].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+
+    // Remove widget from original position and insert at new position
+    const [movedWidget] = widgets.splice(fromIndex, 1)
+    widgets.splice(toIndex, 0, movedWidget)
+
+    // Reassign order values
+    const reorderedWidgets = widgets.map((widget, idx) => ({ ...widget, order: idx + 1 }))
+
+    setSettings({
+      ...settings,
+      dashboardLayout: {
+        ...settings.dashboardLayout,
+        widgets: reorderedWidgets,
+      },
+    })
+  }, [settings])
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
@@ -423,37 +483,101 @@ export function Settings({ onBack, onSave, onPreviewBackground, previewBackgroun
         <AddWidgetSection onAddWidget={addWidget} />
 
         {/* Widget List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Widgets ({settings?.dashboardLayout.widgets.length || 0})</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {(() => {
-              const sortedWidgets = [...(settings?.dashboardLayout.widgets || [])].sort(
-                (a, b) => (a.order ?? 0) - (b.order ?? 0)
-              )
-              return sortedWidgets.map((widget, index) => (
-                <WidgetEditor
-                  key={widget.id}
-                  widget={widget}
-                  index={index}
-                  totalWidgets={sortedWidgets.length}
-                  onUpdate={(newSettings) => updateWidgetSettings(widget.id, newSettings)}
-                  onRemove={() => removeWidget(widget.id)}
-                  onMoveUp={() => moveWidget(widget.id, 'up')}
-                  onMoveDown={() => moveWidget(widget.id, 'down')}
-                />
-              ))
-            })()}
-            {settings?.dashboardLayout.widgets.length === 0 && (
-              <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">
-                No widgets configured. Add one above.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+        <WidgetList
+          widgets={settings?.dashboardLayout.widgets || []}
+          onUpdateSettings={updateWidgetSettings}
+          onRemove={removeWidget}
+          onMoveUp={(id) => moveWidget(id, 'up')}
+          onMoveDown={(id) => moveWidget(id, 'down')}
+          onReorder={reorderWidget}
+        />
       </main>
     </div>
+  )
+}
+
+// Widget List with drag-and-drop support
+function WidgetList({
+  widgets,
+  onUpdateSettings,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+  onReorder,
+}: {
+  widgets: WidgetConfig[]
+  onUpdateSettings: (widgetId: string, settings: Partial<WidgetConfig['settings']>) => void
+  onRemove: (widgetId: string) => void
+  onMoveUp: (widgetId: string) => void
+  onMoveDown: (widgetId: string) => void
+  onReorder: (fromIndex: number, toIndex: number) => void
+}) {
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+
+  const sortedWidgets = [...widgets].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index)
+  }
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDragOverIndex(index)
+    }
+  }
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null)
+  }
+
+  const handleDrop = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    if (draggedIndex !== null && draggedIndex !== index) {
+      onReorder(draggedIndex, index)
+    }
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Widgets ({widgets.length})</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {sortedWidgets.map((widget, index) => (
+          <WidgetEditor
+            key={widget.id}
+            widget={widget}
+            index={index}
+            totalWidgets={sortedWidgets.length}
+            onUpdate={(newSettings) => onUpdateSettings(widget.id, newSettings)}
+            onRemove={() => onRemove(widget.id)}
+            onMoveUp={() => onMoveUp(widget.id)}
+            onMoveDown={() => onMoveDown(widget.id)}
+            isDragging={draggedIndex === index}
+            isDragOver={dragOverIndex === index}
+            onDragStart={() => handleDragStart(index)}
+            onDragOver={(e) => handleDragOver(e, index)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, index)}
+            onDragEnd={handleDragEnd}
+          />
+        ))}
+        {widgets.length === 0 && (
+          <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">
+            No widgets configured. Add one above.
+          </p>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -465,6 +589,13 @@ function WidgetEditor({
   onRemove,
   onMoveUp,
   onMoveDown,
+  isDragging,
+  isDragOver,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
 }: {
   widget: WidgetConfig
   index: number
@@ -473,16 +604,40 @@ function WidgetEditor({
   onRemove: () => void
   onMoveUp: () => void
   onMoveDown: () => void
+  isDragging?: boolean
+  isDragOver?: boolean
+  onDragStart?: () => void
+  onDragOver?: (e: React.DragEvent) => void
+  onDragLeave?: () => void
+  onDrop?: (e: React.DragEvent) => void
+  onDragEnd?: () => void
 }) {
   const [isExpanded, setIsExpanded] = useState(false)
   const isFirst = index === 0
   const isLast = index === totalWidgets - 1
 
   return (
-    <div className="border dark:border-gray-700 rounded-lg p-3">
+    <div
+      className={cn(
+        'border dark:border-gray-700 rounded-lg p-3 transition-all',
+        isDragging && 'opacity-50 scale-[0.98]',
+        isDragOver && 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+      )}
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+    >
       <div className="flex items-center gap-2">
-        {/* Reorder controls */}
-        <div className="flex flex-col">
+        {/* Drag handle */}
+        <div className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hidden sm:block">
+          <GripVertical className="w-4 h-4" />
+        </div>
+
+        {/* Reorder controls (for mobile) */}
+        <div className="flex flex-col sm:hidden">
           <button
             onClick={onMoveUp}
             disabled={isFirst}
@@ -1172,7 +1327,6 @@ const DAILY_CONTENT_OPTIONS: { value: DailyContentType; label: string }[] = [
   { value: 'quote', label: 'Quote of the Day' },
   { value: 'joke', label: 'Joke of the Day' },
   { value: 'word', label: 'Word of the Day' },
-  { value: 'trivia', label: 'Daily Trivia' },
 ]
 
 // Background color palette

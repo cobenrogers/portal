@@ -51,7 +51,8 @@ export interface LotteryWidgetSettings {
 }
 
 // Daily content types that can be enabled in the Daily widget
-export type DailyContentType = 'quote' | 'joke' | 'word' | 'trivia'
+// Note: 'trivia' was removed - now has its own standalone TriviaWidget
+export type DailyContentType = 'quote' | 'joke' | 'word'
 
 // History widget has no settings
 export interface HistoryWidgetSettings {

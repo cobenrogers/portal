@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { WidgetWrapper } from '../WidgetWrapper'
 import { fetchDailyContent } from '@/services/api'
-import type { DailyWidgetSettings, DailyData, TriviaData, DailyContentType } from '@/types'
+import type { DailyWidgetSettings, DailyData, DailyContentType } from '@/types'
 
 interface DailyWidgetProps {
   settings: DailyWidgetSettings
@@ -25,56 +25,6 @@ function ContentLabel({ children }: { children: React.ReactNode }) {
     <span className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 whitespace-nowrap">
       {children}
     </span>
-  )
-}
-
-// Trivia question with multiple choice options and reveal functionality
-function TriviaQuestion({ trivia }: { trivia: TriviaData }) {
-  const [revealed, setRevealed] = useState(false)
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
-
-  // Combine and shuffle answers (only on initial render)
-  const [shuffledAnswers] = useState(() => {
-    const allAnswers = [trivia.correctAnswer, ...trivia.incorrectAnswers]
-    return allAnswers.sort(() => Math.random() - 0.5)
-  })
-
-  const handleAnswerClick = (answer: string) => {
-    if (revealed) return
-    setSelectedAnswer(answer)
-    setRevealed(true)
-  }
-
-  return (
-    <div className="text-gray-700 dark:text-gray-300 text-xs leading-relaxed">
-      <div className="mb-2">{trivia.question}</div>
-      <div className="space-y-1">
-        {shuffledAnswers.map((answer, idx) => {
-          const isCorrect = answer === trivia.correctAnswer
-          const isSelected = answer === selectedAnswer
-          const showResult = revealed
-
-          return (
-            <button
-              key={idx}
-              onClick={() => handleAnswerClick(answer)}
-              disabled={revealed}
-              className={`w-full text-left px-2 py-1 rounded border text-[11px] transition-colors ${
-                showResult
-                  ? isCorrect
-                    ? 'bg-green-100 dark:bg-green-900/30 border-green-500 text-green-700 dark:text-green-300'
-                    : isSelected
-                    ? 'bg-red-100 dark:bg-red-900/30 border-red-500 text-red-700 dark:text-red-300'
-                    : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-50'
-                  : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-750 cursor-pointer'
-              }`}
-            >
-              {answer}
-            </button>
-          )
-        })}
-      </div>
-    </div>
   )
 }
 
@@ -109,7 +59,7 @@ export function DailyWidget({ settings, onSettingsClick }: DailyWidgetProps) {
   const contentCount = settings.enabledContent?.length || 0
 
   // Order of content types for determining borders
-  const contentOrder: DailyContentType[] = ['quote', 'joke', 'word', 'trivia']
+  const contentOrder: DailyContentType[] = ['quote', 'joke', 'word']
 
   // Check if a content type is the last enabled one (no border needed after it)
   const isLastEnabled = (type: DailyContentType): boolean => {
@@ -173,14 +123,6 @@ export function DailyWidget({ settings, onSettingsClick }: DailyWidgetProps) {
                 <span className="mx-1">—</span>
                 {data.word.definition}
               </div>
-            </ContentSection>
-          )}
-
-          {/* Daily Trivia Section */}
-          {settings.enabledContent?.includes('trivia') && data.trivia && (
-            <ContentSection showBorder={false}>
-              <ContentLabel>Daily Trivia:</ContentLabel>
-              <TriviaQuestion trivia={data.trivia} />
             </ContentSection>
           )}
         </div>
