@@ -1,4 +1,4 @@
-import type { ApiResponse, FeedResponse, WeatherData, CalendarEvent, PortalSettings, GeoLocation, StockResponse, StockSearchResult, LotteryData, DailyData, DailyContentType, HistoryData } from '@/types'
+import type { ApiResponse, FeedResponse, WeatherData, CalendarEvent, PortalSettings, GeoLocation, StockResponse, StockSearchResult, LotteryData, DailyData, DailyContentType, HistoryData, TriviaData } from '@/types'
 
 // Use relative path for subdirectory deployment - resolves to /portal/api/ in production
 const API_BASE = import.meta.env.DEV ? '/api' : './api'
@@ -164,4 +164,15 @@ export async function fetchHistoryData(): Promise<HistoryData> {
     throw new Error(response.error || 'Failed to fetch history data')
   }
   return response.data.history
+}
+
+// Trivia API (Daily Trivia)
+export async function fetchTriviaData(): Promise<TriviaData> {
+  const response = await fetchApi<ApiResponse<{ trivia: TriviaData }>>(
+    '/feeds/daily.php?content=trivia'
+  )
+  if (!response.success || !response.data?.trivia) {
+    throw new Error(response.error || 'Failed to fetch trivia data')
+  }
+  return response.data.trivia
 }

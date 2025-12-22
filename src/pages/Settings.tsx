@@ -44,6 +44,7 @@ const WIDGET_TYPES: WidgetTypeConfig[] = [
   { value: 'lottery', label: 'Lottery' },
   { value: 'daily', label: 'Daily' },
   { value: 'history', label: 'This Day in History' },
+  { value: 'trivia', label: 'Daily Trivia' },
 ]
 
 // Add Widget Section - simple list of widget types
@@ -144,6 +145,8 @@ function getDefaultWidgetSettings(type: WidgetType): WidgetConfig['settings'] {
       } as DailyWidgetSettings
     case 'history':
       return {} // No settings for history widget
+    case 'trivia':
+      return {} // No settings for trivia widget
   }
 }
 
@@ -512,7 +515,8 @@ function WidgetEditor({
               widget.type === 'stocks' && 'bg-purple-500',
               widget.type === 'lottery' && 'bg-red-500',
               widget.type === 'daily' && 'bg-orange-500',
-              widget.type === 'history' && 'bg-amber-600'
+              widget.type === 'history' && 'bg-amber-600',
+              widget.type === 'trivia' && 'bg-cyan-500'
             )}
           />
           <span className="font-medium text-gray-900 dark:text-gray-100 truncate">
@@ -530,6 +534,8 @@ function WidgetEditor({
               ? 'The Daily Widget'
               : widget.type === 'history'
               ? 'This Day in History'
+              : widget.type === 'trivia'
+              ? 'Daily Trivia'
               : 'Widget'}
           </span>
           <span className="text-xs text-gray-500 dark:text-gray-400 uppercase flex-shrink-0">{widget.type === 'daily' ? 'widget' : widget.type}</span>
@@ -573,7 +579,7 @@ function WidgetEditor({
               onUpdate={onUpdate}
             />
           )}
-          {(widget.type === 'lottery' || widget.type === 'history') && (
+          {(widget.type === 'lottery' || widget.type === 'history' || widget.type === 'trivia') && (
             <p className="text-sm text-gray-500 dark:text-gray-400">
               No settings to configure for this widget.
             </p>

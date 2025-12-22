@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useState, useEffect } from 'react'
-import { NewsWidget, WeatherWidget, CalendarWidget, StockWidget, LotteryWidget, DailyWidget, HistoryWidget } from './widgets'
+import { NewsWidget, WeatherWidget, CalendarWidget, StockWidget, LotteryWidget, DailyWidget, HistoryWidget, TriviaWidget } from './widgets'
 import { cn } from '@/lib/utils'
 import type {
   WidgetConfig,
@@ -54,6 +54,8 @@ export function Dashboard({ layout }: DashboardProps) {
         return <DailyWidget settings={widget.settings as DailyWidgetSettings} />
       case 'history':
         return <HistoryWidget />
+      case 'trivia':
+        return <TriviaWidget />
       default:
         return <div className="p-4">Unknown widget type</div>
     }

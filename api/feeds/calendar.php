@@ -52,7 +52,85 @@ function parseIcalDate($dateStr, $timezone = null) {
     ];
 }
 
-function parseIcal($content) {
+/**
+ * Parse RRULE and expand recurring events within the date range
+ */
+function expandRecurrence($event, $rrule, $rangeStart, $rangeEnd) {
+    $events = [];
+    $rules = [];
+
+    // Parse RRULE components
+    foreach (explode(';', $rrule) as $part) {
+        if (strpos($part, '=') !== false) {
+            list($key, $value) = explode('=', $part, 2);
+            $rules[$key] = $value;
+        }
+    }
+
+    if (empty($rules['FREQ'])) return [$event];
+
+    $freq = $rules['FREQ'];
+    $interval = intval($rules['INTERVAL'] ?? 1);
+    $count = isset($rules['COUNT']) ? intval($rules['COUNT']) : null;
+    $until = isset($rules['UNTIL']) ? strtotime(parseIcalDate($rules['UNTIL'])['datetime']) : null;
+
+    $startTime = strtotime($event['start']);
+    $endTime = $event['end'] ? strtotime($event['end']) : null;
+    $duration = $endTime ? ($endTime - $startTime) : 0;
+
+    // Calculate recurrence based on frequency
+    $currentStart = $startTime;
+    $occurrences = 0;
+    $maxOccurrences = $count ?? 365; // Limit to prevent infinite loops
+
+    while ($occurrences < $maxOccurrences) {
+        // Check if we've passed the UNTIL date
+        if ($until && $currentStart > $until) break;
+
+        // Check if we've passed the range
+        if ($currentStart > $rangeEnd) break;
+
+        // If occurrence is within range, add it
+        if ($currentStart >= $rangeStart && $currentStart <= $rangeEnd) {
+            $instanceStart = date('c', $currentStart);
+            $instanceEnd = $duration > 0 ? date('c', $currentStart + $duration) : null;
+
+            $events[] = [
+                'id' => $event['id'] . '_' . date('Ymd', $currentStart),
+                'title' => $event['title'],
+                'start' => $instanceStart,
+                'end' => $instanceEnd,
+                'allDay' => $event['allDay'],
+                'location' => $event['location']
+            ];
+        }
+
+        // Move to next occurrence
+        switch ($freq) {
+            case 'DAILY':
+                $currentStart = strtotime("+{$interval} day", $currentStart);
+                break;
+            case 'WEEKLY':
+                $currentStart = strtotime("+{$interval} week", $currentStart);
+                break;
+            case 'MONTHLY':
+                $currentStart = strtotime("+{$interval} month", $currentStart);
+                break;
+            case 'YEARLY':
+                $currentStart = strtotime("+{$interval} year", $currentStart);
+                break;
+            default:
+                // Unsupported frequency, return original event
+                return [$event];
+        }
+
+        $occurrences++;
+    }
+
+    return $events;
+}
+
+function parseIcal($content, $rangeStart = null, $rangeEnd = null) {
     $events = [];
     $lines = explode("\n", str_replace("\r\n", "\n", $content));
 
@@ -94,7 +172,7 @@ function parseIcal($content) {
                 $start = parseIcalDate($currentEvent['DTSTART']);
                 $end = !empty($currentEvent['DTEND']) ? parseIcalDate($currentEvent['DTEND']) : null;
 
-                $events[] = [
+                $baseEvent = [
                     'id' => $currentEvent['UID'] ?? md5(json_encode($currentEvent)),
                     'title' => $currentEvent['SUMMARY'],
                     'start' => $start['datetime'],
@@ -102,6 +180,14 @@ function parseIcal($content) {
                     'allDay' => $start['allDay'],
                     'location' => $currentEvent['LOCATION'] ?? null
                 ];
+
+                // Handle recurring events
+                if (!empty($currentEvent['RRULE']) && $rangeStart && $rangeEnd) {
+                    $expanded = expandRecurrence($baseEvent, $currentEvent['RRULE'], $rangeStart, $rangeEnd);
+                    $events = array_merge($events, $expanded);
+                } else {
+                    $events[] = $baseEvent;
+                }
             }
 
             $currentEvent = [];
@@ -144,16 +230,22 @@ if ($content === false) {
     respond(false, null, 'Failed to fetch calendar');
 }
 
-// Parse iCal
-$events = parseIcal($content);
+// Define date range for filtering and recurrence expansion
+$todayStart = strtotime('today midnight');
+$cutoff = strtotime("+{$daysToShow} days midnight");
 
-// Filter to upcoming events within the specified days
-$now = time();
-$cutoff = strtotime("+{$daysToShow} days");
+// Parse iCal with range for recurrence expansion
+$events = parseIcal($content, $todayStart, $cutoff);
 
-$events = array_filter($events, function($event) use ($now, $cutoff) {
+// Filter to events within the specified days (include all of today)
+$events = array_filter($events, function($event) use ($todayStart, $cutoff) {
     $eventTime = strtotime($event['start']);
-    return $eventTime >= $now && $eventTime <= $cutoff;
+    // For all-day events, compare dates only
+    if ($event['allDay']) {
+        $eventDate = strtotime(date('Y-m-d', $eventTime));
+        return $eventDate >= $todayStart && $eventDate < $cutoff;
+    }
+    return $eventTime >= $todayStart && $eventTime < $cutoff;
 });
 
 respond(true, array_values($events));
