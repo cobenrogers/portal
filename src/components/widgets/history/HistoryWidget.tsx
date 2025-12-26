@@ -62,7 +62,7 @@ export function HistoryWidget({ onSettingsClick }: HistoryWidgetProps) {
             {data.events.map((event, idx) => (
               <div
                 key={idx}
-                className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed"
+                className="text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed"
               >
                 <span className="font-semibold text-gray-900 dark:text-gray-100">
                   {event.year}:

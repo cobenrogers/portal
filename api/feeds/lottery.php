@@ -40,6 +40,7 @@ function fetchNYOpenData(string $datasetId, int $limit = 5): ?array {
 
 /**
  * Scrape jackpot info from official Powerball website
+ * More robust extraction targeting the "Estimated Jackpot" section
  */
 function scrapePowerballJackpot(): ?array {
     $url = 'https://www.powerball.com/';
@@ -62,13 +63,26 @@ function scrapePowerballJackpot(): ?array {
 
     $result = [];
 
-    // Extract jackpot amount - look for patterns like "$1.50 Billion" or "$250 Million"
-    if (preg_match('/\$[\d,]+(?:\.\d+)?\s*(?:Billion|Million)/i', $html, $matches)) {
-        $result['jackpot'] = $matches[0];
+    // Look for "Estimated Jackpot" followed by dollar amount
+    // Pattern: Estimated Jackpot ... $XX Million/Billion
+    if (preg_match('/Estimated\s+Jackpot[^$]*(\$[\d,]+(?:\.\d+)?\s*(?:Billion|Million))/is', $html, $matches)) {
+        $result['jackpot'] = trim($matches[1]);
+    }
+    // Fallback: Look for large jackpot amounts (over $10 Million) that are likely the main jackpot
+    elseif (preg_match_all('/\$(\d+(?:,\d{3})*(?:\.\d+)?)\s*(Billion|Million)/i', $html, $matches, PREG_SET_ORDER)) {
+        foreach ($matches as $match) {
+            $amount = (float)str_replace(',', '', $match[1]);
+            $unit = strtolower($match[2]);
+            // Only consider amounts >= $20 million (minimum Powerball jackpot)
+            if (($unit === 'million' && $amount >= 20) || $unit === 'billion') {
+                $result['jackpot'] = '$' . $match[1] . ' ' . ucfirst($unit);
+                break;
+            }
+        }
     }
 
-    // Extract next drawing date - look for day names
-    if (preg_match('/Next\s+Draw(?:ing)?[:\s]+([A-Za-z]+day,?\s+[A-Za-z]+\.?\s+\d+)/i', $html, $matches)) {
+    // Extract next drawing date
+    if (preg_match('/Next\s+Draw(?:ing)?[:\s]*([A-Za-z]+day,?\s*[A-Za-z]+\.?\s*\d+)/i', $html, $matches)) {
         $result['nextDrawing'] = trim($matches[1]);
     }
 
@@ -76,40 +90,81 @@ function scrapePowerballJackpot(): ?array {
 }
 
 /**
- * Scrape jackpot info from official Mega Millions website
+ * Fetch Mega Millions data from official API
+ * Returns jackpot, winning numbers, and next drawing info
  */
-function scrapeMegaMillionsJackpot(): ?array {
-    $url = 'https://www.megamillions.com/';
+function fetchMegaMillionsAPI(): ?array {
+    $url = 'https://www.megamillions.com/cmspages/utilservice.asmx/GetLatestDrawData';
 
     $context = stream_context_create([
         'http' => [
             'method' => 'GET',
             'header' => [
-                'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept: text/html,application/xhtml+xml'
+                'Accept: application/xml'
             ],
             'timeout' => 10
         ]
     ]);
 
-    $html = @file_get_contents($url, false, $context);
-    if ($html === false) {
+    $response = @file_get_contents($url, false, $context);
+    if ($response === false) {
+        return null;
+    }
+
+    // Parse XML wrapper to get JSON string
+    $xml = @simplexml_load_string($response);
+    if ($xml === false) {
+        return null;
+    }
+
+    $jsonString = (string)$xml;
+    $data = json_decode($jsonString, true);
+    if (!$data) {
         return null;
     }
 
     $result = [];
 
-    // Extract jackpot amount
-    if (preg_match('/\$[\d,]+(?:\.\d+)?\s*(?:Billion|Million)/i', $html, $matches)) {
-        $result['jackpot'] = $matches[0];
+    // Extract winning numbers from Drawing object
+    if (isset($data['Drawing'])) {
+        $d = $data['Drawing'];
+        $result['winningNumbers'] = [
+            (int)($d['N1'] ?? 0),
+            (int)($d['N2'] ?? 0),
+            (int)($d['N3'] ?? 0),
+            (int)($d['N4'] ?? 0),
+            (int)($d['N5'] ?? 0)
+        ];
+        $result['megaBall'] = (int)($d['MBall'] ?? 0);
+        $result['megaplier'] = isset($d['Megaplier']) && $d['Megaplier'] > 0 ? (int)$d['Megaplier'] : null;
+        $result['lastDrawDate'] = isset($d['PlayDate']) ? date('M j, Y', strtotime($d['PlayDate'])) : null;
+    }
+
+    // Extract jackpot info
+    if (isset($data['Jackpot'])) {
+        $j = $data['Jackpot'];
+        $nextPrize = $j['NextPrizePool'] ?? 0;
+        $result['jackpot'] = formatJackpot($nextPrize);
     }
 
     // Extract next drawing date
-    if (preg_match('/Next\s+Draw(?:ing)?[:\s]+([A-Za-z]+day,?\s+[A-Za-z]+\.?\s+\d+)/i', $html, $matches)) {
-        $result['nextDrawing'] = trim($matches[1]);
+    if (isset($data['NextDrawingDate'])) {
+        $result['nextDrawing'] = date('l, M j', strtotime($data['NextDrawingDate']));
     }
 
-    return !empty($result) ? $result : null;
+    return $result;
+}
+
+/**
+ * Format jackpot amount as human-readable string
+ */
+function formatJackpot(float $amount): string {
+    if ($amount >= 1000000000) {
+        return '$' . number_format($amount / 1000000000, 2) . ' Billion';
+    } elseif ($amount >= 1000000) {
+        return '$' . number_format($amount / 1000000, 0) . ' Million';
+    }
+    return '$' . number_format($amount, 0);
 }
 
 /**
@@ -175,11 +230,11 @@ function parseWinningNumbers(string $numbers, string $game): array {
 }
 
 // Fetch data from all sources
-$powerballData = fetchNYOpenData('d6yy-54nr', 1); // Powerball dataset
-$megaMillionsData = fetchNYOpenData('5xaw-6ayf', 1); // Mega Millions dataset
+$powerballData = fetchNYOpenData('d6yy-54nr', 1); // Powerball dataset (for winning numbers)
+$powerballJackpot = scrapePowerballJackpot(); // Scrape jackpot from official site
 
-$powerballJackpot = scrapePowerballJackpot();
-$megaMillionsJackpot = scrapeMegaMillionsJackpot();
+// Use official Mega Millions API (provides all data including jackpot)
+$megaMillionsAPI = fetchMegaMillionsAPI();
 
 // Build response
 $response = [
@@ -209,20 +264,17 @@ if (!empty($powerballData) && isset($powerballData[0])) {
     ];
 }
 
-// Process Mega Millions data
-if (!empty($megaMillionsData) && isset($megaMillionsData[0])) {
-    $mm = $megaMillionsData[0];
-    $winningNumbers = parseWinningNumbers($mm['winning_numbers'] ?? '', 'megamillions');
-
+// Process Mega Millions data from official API
+if ($megaMillionsAPI && !empty($megaMillionsAPI['winningNumbers'])) {
     $response['data']['megaMillions'] = [
         'name' => 'Mega Millions',
-        'lastDrawDate' => isset($mm['draw_date']) ? date('M j, Y', strtotime($mm['draw_date'])) : null,
-        'winningNumbers' => $winningNumbers['numbers'],
-        'specialBall' => $winningNumbers['specialBall'],
-        'specialBallName' => $winningNumbers['specialBallName'],
-        'multiplier' => isset($mm['mega_ball']) ? null : null, // MM doesn't have multiplier in same format
-        'jackpot' => $megaMillionsJackpot['jackpot'] ?? null,
-        'nextDrawing' => $megaMillionsJackpot['nextDrawing'] ?? getNextDrawingDate('megamillions'),
+        'lastDrawDate' => $megaMillionsAPI['lastDrawDate'] ?? null,
+        'winningNumbers' => $megaMillionsAPI['winningNumbers'],
+        'specialBall' => $megaMillionsAPI['megaBall'] ?? 0,
+        'specialBallName' => 'Mega Ball',
+        'multiplier' => $megaMillionsAPI['megaplier'] ?? null,
+        'jackpot' => $megaMillionsAPI['jackpot'] ?? null,
+        'nextDrawing' => $megaMillionsAPI['nextDrawing'] ?? getNextDrawingDate('megamillions'),
         'drawDays' => 'Tue, Fri'
     ];
 }

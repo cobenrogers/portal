@@ -86,7 +86,7 @@ export function TriviaWidget({ onSettingsClick }: TriviaWidgetProps) {
           </div>
 
           {/* Question */}
-          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+          <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
             {data.question}
           </p>
 
@@ -102,7 +102,7 @@ export function TriviaWidget({ onSettingsClick }: TriviaWidgetProps) {
                   key={idx}
                   onClick={() => handleAnswerClick(answer)}
                   disabled={revealed}
-                  className={`w-full text-left px-3 py-2 rounded border text-xs transition-colors ${
+                  className={`w-full text-left px-2 py-1.5 rounded border text-[11px] transition-colors ${
                     showResult
                       ? isCorrect
                         ? 'bg-green-100 dark:bg-green-900/30 border-green-500 text-green-700 dark:text-green-300'
