@@ -1,4 +1,4 @@
-import type { ApiResponse, FeedResponse, WeatherData, CalendarEvent, PortalSettings, GeoLocation, StockResponse, StockSearchResult, LotteryData, DailyData, DailyContentType, HistoryData, TriviaData } from '@/types'
+import type { ApiResponse, FeedResponse, WeatherData, CalendarEvent, PortalSettings, GeoLocation, StockResponse, StockSearchResult, LotteryData, DailyData, DailyContentType, HistoryData, TriviaData, BitcoinMiningData, RecipesData } from '@/types'
 
 // Use relative path for subdirectory deployment - resolves to /portal/api/ in production
 const API_BASE = import.meta.env.DEV ? '/api' : './api'
@@ -175,4 +175,34 @@ export async function fetchTriviaData(): Promise<TriviaData> {
     throw new Error(response.error || 'Failed to fetch trivia data')
   }
   return response.data.trivia
+}
+
+// Bitcoin Mining API (public-pool.io)
+export async function fetchBitcoinMiningData(walletAddress: string): Promise<BitcoinMiningData> {
+  if (!walletAddress.trim()) {
+    throw new Error('Wallet address is required')
+  }
+  const response = await fetchApi<ApiResponse<BitcoinMiningData>>(
+    `/feeds/bitcoin-mining.php?wallet=${encodeURIComponent(walletAddress)}`
+  )
+  if (!response.success || !response.data) {
+    throw new Error(response.error || 'Failed to fetch mining data')
+  }
+  return response.data
+}
+
+// Recipe Suggestions API (Glyc - getglyc.com)
+export async function fetchRecipeSuggestions(
+  count: number = 3,
+  category: string = ''
+): Promise<RecipesData> {
+  let url = `/feeds/recipes.php?count=${count}`
+  if (category && category !== 'all') {
+    url += `&category=${encodeURIComponent(category)}`
+  }
+  const response = await fetchApi<ApiResponse<RecipesData>>(url)
+  if (!response.success || !response.data) {
+    throw new Error(response.error || 'Failed to fetch recipes')
+  }
+  return response.data
 }

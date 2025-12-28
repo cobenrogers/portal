@@ -1,16 +1,24 @@
 import { useMemo, useCallback, useState, useEffect } from 'react'
-import { NewsWidget, WeatherWidget, CalendarWidget, StockWidget, LotteryWidget, DailyWidget, HistoryWidget, TriviaWidget } from './widgets'
+import { NewsWidget, WeatherWidget, CalendarWidget, StockWidget, LotteryWidget, DailyWidget, HistoryWidget, TriviaWidget, BitcoinMiningWidget, RecipesWidget } from './widgets'
 import { cn } from '@/lib/utils'
 import type {
   WidgetConfig,
   DashboardLayout,
   NewsWidgetSettings,
+  NewsCategoryWidgetSettings,
   WeatherWidgetSettings,
   CalendarWidgetSettings,
   StockWidgetSettings,
   LotteryWidgetSettings,
   DailyWidgetSettings,
+  BitcoinMiningWidgetSettings,
+  RecipesWidgetSettings,
 } from '@/types'
+
+// Helper to check if widget type is a news category
+function isNewsCategory(type: string): boolean {
+  return type.startsWith('news-')
+}
 
 interface DashboardProps {
   layout: DashboardLayout
@@ -39,6 +47,14 @@ export function Dashboard({ layout }: DashboardProps) {
   }, [layout.widgets])
 
   const renderWidget = useCallback((widget: WidgetConfig) => {
+    // Handle news category widgets (news-top, news-business, etc.)
+    if (isNewsCategory(widget.type)) {
+      // News category widgets use the same NewsWidget component
+      // Convert NewsCategoryWidgetSettings to NewsWidgetSettings format
+      const settings = widget.settings as NewsCategoryWidgetSettings
+      return <NewsWidget settings={settings as NewsWidgetSettings} />
+    }
+
     switch (widget.type) {
       case 'news':
         return <NewsWidget settings={widget.settings as NewsWidgetSettings} />
@@ -56,6 +72,10 @@ export function Dashboard({ layout }: DashboardProps) {
         return <HistoryWidget />
       case 'trivia':
         return <TriviaWidget />
+      case 'bitcoin-mining':
+        return <BitcoinMiningWidget settings={widget.settings as BitcoinMiningWidgetSettings} />
+      case 'recipes':
+        return <RecipesWidget settings={widget.settings as RecipesWidgetSettings} />
       default:
         return <div className="p-4">Unknown widget type</div>
     }

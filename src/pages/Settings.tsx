@@ -10,12 +10,19 @@ import type {
   WidgetConfig,
   WidgetType,
   NewsWidgetSettings,
+  NewsCategoryWidgetSettings,
+  NewsCategory,
   WeatherWidgetSettings,
   CalendarWidgetSettings,
+  CalendarSource,
+  CalendarColor,
   StockWidgetSettings,
   LotteryWidgetSettings,
   DailyWidgetSettings,
   DailyContentType,
+  BitcoinMiningWidgetSettings,
+  RecipesWidgetSettings,
+  RecipeCategory,
   GeoLocation,
   StockSearchResult,
   BackgroundSettings,
@@ -36,13 +43,14 @@ interface WidgetTypeConfig {
   label: string
 }
 
-// Main widget types (non-daily)
+// Main widget types (non-expandable categories)
 const MAIN_WIDGET_TYPES: WidgetTypeConfig[] = [
-  { value: 'news', label: 'News Feed' },
   { value: 'weather', label: 'Weather' },
   { value: 'calendar', label: 'Calendar' },
   { value: 'stocks', label: 'Stock Ticker' },
   { value: 'lottery', label: 'Lottery' },
+  { value: 'bitcoin-mining', label: 'Bitcoin Mining' },
+  { value: 'recipes', label: 'Recipe Suggestions' },
 ]
 
 // Daily widget types (shown when Daily category is expanded)
@@ -52,9 +60,143 @@ const DAILY_WIDGET_TYPES: WidgetTypeConfig[] = [
   { value: 'trivia', label: 'Daily Trivia' },
 ]
 
-// Add Widget Section - with expandable Daily category
-function AddWidgetSection({ onAddWidget }: { onAddWidget: (type: WidgetType) => void }) {
+// News category widget types with their feeds
+interface NewsCategoryConfig {
+  type: NewsCategory
+  label: string
+  color: string
+  feeds: { name: string; url: string }[]
+}
+
+const NEWS_CATEGORIES: NewsCategoryConfig[] = [
+  {
+    type: 'news-top',
+    label: 'Top News',
+    color: 'blue',
+    feeds: [
+      { name: 'CNN (via Google News)', url: 'https://news.google.com/rss/search?q=site:cnn.com&hl=en-US&gl=US&ceid=US:en' },
+      { name: 'BBC News', url: 'https://feeds.bbci.co.uk/news/rss.xml' },
+      { name: 'New York Times', url: 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml' },
+      { name: 'NPR News', url: 'https://feeds.npr.org/1001/rss.xml' },
+      { name: 'ABC News', url: 'https://abcnews.go.com/abcnews/topstories' },
+      { name: 'CBS News', url: 'https://www.cbsnews.com/latest/rss/main' },
+      { name: 'NBC News', url: 'https://feeds.nbcnews.com/nbcnews/public/news' },
+      { name: 'Fox News', url: 'https://moxie.foxnews.com/google-publisher/latest.xml' },
+      { name: 'Politico', url: 'https://www.politico.com/rss/politicopicks.xml' },
+      { name: 'LA Times', url: 'https://www.latimes.com/local/rss2.0.xml' },
+      { name: 'Time', url: 'https://time.com/feed/' },
+    ],
+  },
+  {
+    type: 'news-business',
+    label: 'Business',
+    color: 'green',
+    feeds: [
+      { name: 'CNBC Top News', url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10001147' },
+      { name: 'Bloomberg', url: 'https://feeds.bloomberg.com/markets/news.rss' },
+      { name: 'Wall Street Journal', url: 'https://feeds.a.dj.com/rss/RSSWorldNews.xml' },
+      { name: 'MarketWatch', url: 'https://feeds.marketwatch.com/marketwatch/topstories/' },
+    ],
+  },
+  {
+    type: 'news-tech',
+    label: 'Technology',
+    color: 'purple',
+    feeds: [
+      { name: 'TechCrunch', url: 'https://techcrunch.com/feed/' },
+      { name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml' },
+      { name: 'Wired', url: 'https://www.wired.com/feed/rss' },
+      { name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index' },
+      { name: 'Hacker News', url: 'https://hnrss.org/frontpage' },
+      { name: 'Engadget', url: 'https://www.engadget.com/rss.xml' },
+    ],
+  },
+  {
+    type: 'news-world',
+    label: 'World',
+    color: 'teal',
+    feeds: [
+      { name: 'BBC World', url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
+      { name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml' },
+      { name: 'Reuters World', url: 'https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best' },
+    ],
+  },
+  {
+    type: 'news-sports',
+    label: 'Sports',
+    color: 'red',
+    feeds: [
+      { name: 'ESPN Top Headlines', url: 'https://www.espn.com/espn/rss/news' },
+      { name: 'ESPN NFL', url: 'https://www.espn.com/espn/rss/nfl/news' },
+      { name: 'ESPN NBA', url: 'https://www.espn.com/espn/rss/nba/news' },
+      { name: 'ESPN MLB', url: 'https://www.espn.com/espn/rss/mlb/news' },
+    ],
+  },
+  {
+    type: 'news-entertainment',
+    label: 'Entertainment',
+    color: 'pink',
+    feeds: [
+      { name: 'Variety', url: 'https://variety.com/feed/' },
+      { name: 'Entertainment Weekly', url: 'https://ew.com/feed/' },
+      { name: 'Hollywood Reporter', url: 'https://www.hollywoodreporter.com/feed/' },
+    ],
+  },
+  {
+    type: 'news-custom',
+    label: 'Custom Feed',
+    color: 'gray',
+    feeds: [], // No presets - user enters custom URL
+  },
+]
+
+// Helper to get default feed for a news category
+function getDefaultNewsFeed(category: NewsCategory): { name: string; url: string } {
+  const config = NEWS_CATEGORIES.find(c => c.type === category)
+  if (config && config.feeds.length > 0) {
+    return config.feeds[0]
+  }
+  return { name: 'Custom Feed', url: '' }
+}
+
+// Helper to get category config
+function getNewsCategoryConfig(category: NewsCategory): NewsCategoryConfig | undefined {
+  return NEWS_CATEGORIES.find(c => c.type === category)
+}
+
+// Check if a widget type is a news category
+function isNewsCategory(type: WidgetType): type is NewsCategory {
+  return type.startsWith('news-')
+}
+
+// Add Widget Section - with expandable News and Daily categories
+function AddWidgetSection({ onAddWidget, onAddNewsWidget }: {
+  onAddWidget: (type: WidgetType) => void
+  onAddNewsWidget: (category: NewsCategory, feedName: string, feedUrl: string) => void
+}) {
+  const [newsExpanded, setNewsExpanded] = useState(false)
   const [dailyExpanded, setDailyExpanded] = useState(false)
+  const [selectedNewsCategory, setSelectedNewsCategory] = useState<NewsCategory | null>(null)
+
+  const handleNewsCategoryClick = (category: NewsCategory) => {
+    if (category === 'news-custom') {
+      // Custom feed - add directly with empty URL (user will configure)
+      onAddNewsWidget(category, 'Custom Feed', '')
+      setNewsExpanded(false)
+      setSelectedNewsCategory(null)
+    } else {
+      // Toggle sub-selection for preset feeds
+      setSelectedNewsCategory(selectedNewsCategory === category ? null : category)
+    }
+  }
+
+  const handleFeedSelect = (category: NewsCategory, feed: { name: string; url: string }) => {
+    onAddNewsWidget(category, feed.name, feed.url)
+    setNewsExpanded(false)
+    setSelectedNewsCategory(null)
+  }
+
+  const selectedCategoryConfig = selectedNewsCategory ? getNewsCategoryConfig(selectedNewsCategory) : null
 
   return (
     <Card>
@@ -63,6 +205,21 @@ function AddWidgetSection({ onAddWidget }: { onAddWidget: (type: WidgetType) => 
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap gap-2">
+          {/* News category button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setNewsExpanded(!newsExpanded)
+              setSelectedNewsCategory(null)
+              setDailyExpanded(false)
+            }}
+            className={newsExpanded ? 'bg-blue-500 hover:bg-blue-600 text-white border-blue-500' : ''}
+          >
+            {newsExpanded ? <ChevronUp className="w-4 h-4 mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
+            News
+          </Button>
+
           {MAIN_WIDGET_TYPES.map((type) => (
             <Button
               key={type.value}
@@ -74,17 +231,62 @@ function AddWidgetSection({ onAddWidget }: { onAddWidget: (type: WidgetType) => 
               {type.label}
             </Button>
           ))}
+
           {/* Daily category button */}
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setDailyExpanded(!dailyExpanded)}
+            onClick={() => {
+              setDailyExpanded(!dailyExpanded)
+              setNewsExpanded(false)
+              setSelectedNewsCategory(null)
+            }}
             className={dailyExpanded ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500' : ''}
           >
             {dailyExpanded ? <ChevronUp className="w-4 h-4 mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
             Daily
           </Button>
         </div>
+
+        {/* Expanded News category options */}
+        {newsExpanded && (
+          <div className="space-y-2 pl-4 pt-2 border-l-2 border-blue-300 dark:border-blue-700">
+            <div className="flex flex-wrap gap-2">
+              {NEWS_CATEGORIES.map((category) => (
+                <Button
+                  key={category.type}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleNewsCategoryClick(category.type)}
+                  className={cn(
+                    'border-blue-300 dark:border-blue-700',
+                    selectedNewsCategory === category.type
+                      ? `bg-${category.color}-500 text-white border-${category.color}-500`
+                      : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                  )}
+                >
+                  {selectedNewsCategory === category.type ? <ChevronUp className="w-4 h-4 mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
+                  {category.label}
+                </Button>
+              ))}
+            </div>
+
+            {/* Feed selection for selected news category */}
+            {selectedCategoryConfig && selectedCategoryConfig.feeds.length > 0 && (
+              <div className="flex flex-wrap gap-1 pl-4 pt-2 border-l-2 border-gray-300 dark:border-gray-600">
+                {selectedCategoryConfig.feeds.map((feed) => (
+                  <button
+                    key={feed.url}
+                    onClick={() => handleFeedSelect(selectedNewsCategory!, feed)}
+                    className="px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    {feed.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Expanded Daily widget options */}
         {dailyExpanded && (
@@ -111,47 +313,24 @@ function AddWidgetSection({ onAddWidget }: { onAddWidget: (type: WidgetType) => 
   )
 }
 
-const PRESET_FEEDS = [
-  // Top US News
-  // Note: CNN's own RSS feeds are abandoned (stale 2023 content), so we use Google News
-  { name: 'CNN (via Google News)', url: 'https://news.google.com/rss/search?q=site:cnn.com&hl=en-US&gl=US&ceid=US:en', category: 'Top News' },
-  { name: 'BBC News', url: 'https://feeds.bbci.co.uk/news/rss.xml', category: 'Top News' },
-  { name: 'New York Times', url: 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml', category: 'Top News' },
-  { name: 'NPR News', url: 'https://feeds.npr.org/1001/rss.xml', category: 'Top News' },
-  { name: 'ABC News', url: 'https://abcnews.go.com/abcnews/topstories', category: 'Top News' },
-  { name: 'CBS News', url: 'https://www.cbsnews.com/latest/rss/main', category: 'Top News' },
-  { name: 'NBC News', url: 'https://feeds.nbcnews.com/nbcnews/public/news', category: 'Top News' },
-  { name: 'Fox News', url: 'https://moxie.foxnews.com/google-publisher/latest.xml', category: 'Top News' },
-  { name: 'Politico', url: 'https://www.politico.com/rss/politicopicks.xml', category: 'Top News' },
-  { name: 'LA Times', url: 'https://www.latimes.com/local/rss2.0.xml', category: 'Top News' },
-  { name: 'Time', url: 'https://time.com/feed/', category: 'Top News' },
-  // Business
-  { name: 'CNBC Top News', url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10001147', category: 'Business' },
-  { name: 'Bloomberg', url: 'https://feeds.bloomberg.com/markets/news.rss', category: 'Business' },
-  { name: 'Wall Street Journal', url: 'https://feeds.a.dj.com/rss/RSSWorldNews.xml', category: 'Business' },
-  { name: 'MarketWatch', url: 'https://feeds.marketwatch.com/marketwatch/topstories/', category: 'Business' },
-  // Technology
-  { name: 'TechCrunch', url: 'https://techcrunch.com/feed/', category: 'Technology' },
-  { name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml', category: 'Technology' },
-  { name: 'Wired', url: 'https://www.wired.com/feed/rss', category: 'Technology' },
-  { name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index', category: 'Technology' },
-  { name: 'Hacker News', url: 'https://hnrss.org/frontpage', category: 'Technology' },
-  { name: 'Engadget', url: 'https://www.engadget.com/rss.xml', category: 'Technology' },
-  // World
-  { name: 'BBC World', url: 'https://feeds.bbci.co.uk/news/world/rss.xml', category: 'World' },
-  { name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml', category: 'World' },
-  // Sports
-  { name: 'ESPN Top Headlines', url: 'https://www.espn.com/espn/rss/news', category: 'Sports' },
-  // Entertainment
-  { name: 'Variety', url: 'https://variety.com/feed/', category: 'Entertainment' },
-]
-
 function getDefaultWidgetSettings(type: WidgetType): WidgetConfig['settings'] {
+  // Handle news category types
+  if (isNewsCategory(type)) {
+    const defaultFeed = getDefaultNewsFeed(type)
+    return {
+      feedUrl: defaultFeed.url,
+      feedName: defaultFeed.name,
+      maxItems: 10,
+      refreshInterval: 15,
+    } as NewsCategoryWidgetSettings
+  }
+
   switch (type) {
     case 'news':
+      // Legacy news widget - use first top news feed as default
       return {
-        feedUrl: PRESET_FEEDS[0].url,
-        feedName: PRESET_FEEDS[0].name,
+        feedUrl: NEWS_CATEGORIES[0].feeds[0].url,
+        feedName: NEWS_CATEGORIES[0].feeds[0].name,
         maxItems: 10,
         refreshInterval: 15,
       } as NewsWidgetSettings
@@ -185,6 +364,21 @@ function getDefaultWidgetSettings(type: WidgetType): WidgetConfig['settings'] {
       return {} // No settings for history widget
     case 'trivia':
       return {} // No settings for trivia widget
+    case 'bitcoin-mining':
+      return {
+        walletAddress: '',
+        widgetName: 'Bitcoin Mining',
+        refreshInterval: 5,
+      } as BitcoinMiningWidgetSettings
+    case 'recipes':
+      return {
+        widgetName: 'Recipe Suggestions',
+        recipeCount: 3,
+        category: 'all',
+        refreshInterval: 60,
+      } as RecipesWidgetSettings
+    default:
+      return {} // Fallback for any unhandled types
   }
 }
 
@@ -261,6 +455,52 @@ export function Settings({ onBack, onSave, onPreviewBackground, previewBackgroun
 
     // Calculate next y position based on existing widgets
     // Find the max y value in each layout and add 1
+    const getNextY = (layout: typeof settings.dashboardLayout.layouts.lg) => {
+      if (layout.length === 0) return 0
+      const maxY = Math.max(...layout.map(item => item.y ?? 0))
+      return maxY + 1
+    }
+
+    setSettings({
+      ...settings,
+      dashboardLayout: {
+        ...settings.dashboardLayout,
+        layouts: {
+          lg: [...settings.dashboardLayout.layouts.lg, { i: id, x: 0, y: getNextY(settings.dashboardLayout.layouts.lg), w: 3, h: 3 }],
+          md: [...settings.dashboardLayout.layouts.md, { i: id, x: 0, y: getNextY(settings.dashboardLayout.layouts.md), w: 3, h: 3 }],
+          sm: [...settings.dashboardLayout.layouts.sm, { i: id, x: 0, y: getNextY(settings.dashboardLayout.layouts.sm), w: 3, h: 3 }],
+        },
+        widgets: [...settings.dashboardLayout.widgets, newWidget],
+      },
+    })
+  }, [settings])
+
+  // Add a news widget with specific feed settings
+  const addNewsWidget = useCallback((category: NewsCategory, feedName: string, feedUrl: string) => {
+    if (!settings) return
+
+    const id = `${category}-${generateId()}`
+
+    // Calculate the next order value (one more than current max)
+    const existingWidgets = settings.dashboardLayout.widgets
+    const maxOrder = existingWidgets.length > 0
+      ? Math.max(...existingWidgets.map(w => w.order ?? 0))
+      : 0
+
+    const newWidget: WidgetConfig = {
+      id,
+      type: category,
+      title: feedName,
+      settings: {
+        feedUrl,
+        feedName,
+        maxItems: 10,
+        refreshInterval: 15,
+      } as NewsCategoryWidgetSettings,
+      order: maxOrder + 1,
+    }
+
+    // Calculate next y position based on existing widgets
     const getNextY = (layout: typeof settings.dashboardLayout.layouts.lg) => {
       if (layout.length === 0) return 0
       const maxY = Math.max(...layout.map(item => item.y ?? 0))
@@ -480,7 +720,7 @@ export function Settings({ onBack, onSave, onPreviewBackground, previewBackgroun
         </Card>
 
         {/* Add Widget */}
-        <AddWidgetSection onAddWidget={addWidget} />
+        <AddWidgetSection onAddWidget={addWidget} onAddNewsWidget={addNewsWidget} />
 
         {/* Widget List */}
         <WidgetList
@@ -664,19 +904,27 @@ function WidgetEditor({
           <span
             className={cn(
               'w-2 h-2 rounded-full flex-shrink-0',
-              widget.type === 'news' && 'bg-blue-500',
+              (widget.type === 'news' || widget.type === 'news-top') && 'bg-blue-500',
+              widget.type === 'news-business' && 'bg-green-500',
+              widget.type === 'news-tech' && 'bg-purple-500',
+              widget.type === 'news-world' && 'bg-teal-500',
+              widget.type === 'news-sports' && 'bg-red-500',
+              widget.type === 'news-entertainment' && 'bg-pink-500',
+              widget.type === 'news-custom' && 'bg-gray-500',
               widget.type === 'weather' && 'bg-yellow-500',
-              widget.type === 'calendar' && 'bg-green-500',
-              widget.type === 'stocks' && 'bg-purple-500',
-              widget.type === 'lottery' && 'bg-red-500',
+              widget.type === 'calendar' && 'bg-emerald-500',
+              widget.type === 'stocks' && 'bg-violet-500',
+              widget.type === 'lottery' && 'bg-rose-500',
               widget.type === 'daily' && 'bg-orange-500',
               widget.type === 'history' && 'bg-amber-600',
-              widget.type === 'trivia' && 'bg-cyan-500'
+              widget.type === 'trivia' && 'bg-cyan-500',
+              widget.type === 'bitcoin-mining' && 'bg-orange-500',
+              widget.type === 'recipes' && 'bg-green-500'
             )}
           />
           <span className="font-medium text-gray-900 dark:text-gray-100 truncate">
-            {widget.type === 'news'
-              ? (widget.settings as NewsWidgetSettings).feedName
+            {widget.type === 'news' || isNewsCategory(widget.type)
+              ? (widget.settings as NewsWidgetSettings | NewsCategoryWidgetSettings).feedName
               : widget.type === 'weather'
               ? (widget.settings as WeatherWidgetSettings).location
               : widget.type === 'calendar'
@@ -691,9 +939,15 @@ function WidgetEditor({
               ? 'This Day in History'
               : widget.type === 'trivia'
               ? 'Daily Trivia'
+              : widget.type === 'bitcoin-mining'
+              ? (widget.settings as BitcoinMiningWidgetSettings).widgetName || 'Bitcoin Mining'
+              : widget.type === 'recipes'
+              ? (widget.settings as RecipesWidgetSettings).widgetName || 'Recipe Suggestions'
               : 'Widget'}
           </span>
-          <span className="text-xs text-gray-500 dark:text-gray-400 uppercase flex-shrink-0">{widget.type === 'daily' ? 'widget' : widget.type}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 uppercase flex-shrink-0">
+            {widget.type === 'daily' ? 'widget' : isNewsCategory(widget.type) ? 'news' : widget.type}
+          </span>
         </button>
 
         {/* Delete button */}
@@ -705,8 +959,15 @@ function WidgetEditor({
       {isExpanded && (
         <div className="mt-4 pt-4 border-t dark:border-gray-700 space-y-4">
           {widget.type === 'news' && (
-            <NewsWidgetEditor
+            <LegacyNewsWidgetEditor
               settings={widget.settings as NewsWidgetSettings}
+              onUpdate={onUpdate}
+            />
+          )}
+          {isNewsCategory(widget.type) && (
+            <NewsCategoryWidgetEditor
+              category={widget.type}
+              settings={widget.settings as NewsCategoryWidgetSettings}
               onUpdate={onUpdate}
             />
           )}
@@ -734,6 +995,18 @@ function WidgetEditor({
               onUpdate={onUpdate}
             />
           )}
+          {widget.type === 'bitcoin-mining' && (
+            <BitcoinMiningWidgetEditor
+              settings={widget.settings as BitcoinMiningWidgetSettings}
+              onUpdate={onUpdate}
+            />
+          )}
+          {widget.type === 'recipes' && (
+            <RecipesWidgetEditor
+              settings={widget.settings as RecipesWidgetSettings}
+              onUpdate={onUpdate}
+            />
+          )}
           {(widget.type === 'lottery' || widget.type === 'history' || widget.type === 'trivia') && (
             <p className="text-sm text-gray-500 dark:text-gray-400">
               No settings to configure for this widget.
@@ -745,10 +1018,8 @@ function WidgetEditor({
   )
 }
 
-// Group feeds by category
-const FEED_CATEGORIES = [...new Set(PRESET_FEEDS.map((f) => f.category))]
-
-function NewsWidgetEditor({
+// Legacy news widget editor (for backwards compatibility with old 'news' type widgets)
+function LegacyNewsWidgetEditor({
   settings,
   onUpdate,
 }: {
@@ -758,12 +1029,12 @@ function NewsWidgetEditor({
   return (
     <>
       <div className="space-y-3">
-        <label className="text-sm font-medium text-gray-900 dark:text-gray-100">Preset Feeds</label>
-        {FEED_CATEGORIES.map((category) => (
-          <div key={category}>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{category}</p>
+        <label className="text-sm font-medium text-gray-900 dark:text-gray-100">Select Feed</label>
+        {NEWS_CATEGORIES.filter(cat => cat.feeds.length > 0).map((category) => (
+          <div key={category.type}>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{category.label}</p>
             <div className="flex flex-wrap gap-1">
-              {PRESET_FEEDS.filter((f) => f.category === category).map((feed) => (
+              {category.feeds.map((feed) => (
                 <button
                   key={feed.url}
                   onClick={() => onUpdate({ feedUrl: feed.url, feedName: feed.name })}
@@ -783,6 +1054,79 @@ function NewsWidgetEditor({
       </div>
       <Input
         label="Custom Feed URL"
+        value={settings.feedUrl}
+        onChange={(e) => onUpdate({ feedUrl: e.target.value })}
+        placeholder="https://example.com/feed.xml"
+      />
+      <Input
+        label="Feed Name"
+        value={settings.feedName}
+        onChange={(e) => onUpdate({ feedName: e.target.value })}
+      />
+      <div className="grid grid-cols-2 gap-4">
+        <Input
+          label="Max Items"
+          type="number"
+          value={settings.maxItems}
+          onChange={(e) => onUpdate({ maxItems: parseInt(e.target.value) || 10 })}
+          min={1}
+          max={50}
+        />
+        <Input
+          label="Refresh (minutes)"
+          type="number"
+          value={settings.refreshInterval}
+          onChange={(e) => onUpdate({ refreshInterval: parseInt(e.target.value) || 15 })}
+          min={5}
+          max={120}
+        />
+      </div>
+    </>
+  )
+}
+
+// News category widget editor - simplified settings
+function NewsCategoryWidgetEditor({
+  category,
+  settings,
+  onUpdate,
+}: {
+  category: NewsCategory
+  settings: NewsCategoryWidgetSettings
+  onUpdate: (s: Partial<NewsCategoryWidgetSettings>) => void
+}) {
+  const categoryConfig = getNewsCategoryConfig(category)
+  const feeds = categoryConfig?.feeds || []
+  const isCustomCategory = category === 'news-custom'
+
+  return (
+    <>
+      {/* Feed selection for non-custom categories */}
+      {feeds.length > 0 && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-900 dark:text-gray-100">Select Feed</label>
+          <div className="flex flex-wrap gap-1">
+            {feeds.map((feed) => (
+              <button
+                key={feed.url}
+                onClick={() => onUpdate({ feedUrl: feed.url, feedName: feed.name })}
+                className={cn(
+                  'px-2 py-1 text-xs rounded border',
+                  settings.feedUrl === feed.url
+                    ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-300'
+                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                )}
+              >
+                {feed.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Custom Feed URL - always shown for custom category, optional for others */}
+      <Input
+        label={isCustomCategory ? "Feed URL" : "Custom Feed URL (optional)"}
         value={settings.feedUrl}
         onChange={(e) => onUpdate({ feedUrl: e.target.value })}
         placeholder="https://example.com/feed.xml"
@@ -960,6 +1304,26 @@ function WeatherWidgetEditor({
   )
 }
 
+// Available calendar colors
+const CALENDAR_COLOR_OPTIONS: { value: CalendarColor; label: string; className: string }[] = [
+  { value: 'blue', label: 'Blue', className: 'bg-blue-500' },
+  { value: 'green', label: 'Green', className: 'bg-green-500' },
+  { value: 'purple', label: 'Purple', className: 'bg-purple-500' },
+  { value: 'red', label: 'Red', className: 'bg-red-500' },
+  { value: 'orange', label: 'Orange', className: 'bg-orange-500' },
+  { value: 'pink', label: 'Pink', className: 'bg-pink-500' },
+]
+
+// Get used colors from current calendars
+function getAvailableColors(calendars: CalendarSource[], excludeId?: string): CalendarColor[] {
+  const usedColors = calendars
+    .filter(c => c.id !== excludeId)
+    .map(c => c.color)
+  return CALENDAR_COLOR_OPTIONS
+    .map(c => c.value)
+    .filter(color => !usedColors.includes(color))
+}
+
 function CalendarWidgetEditor({
   settings,
   onUpdate,
@@ -967,20 +1331,142 @@ function CalendarWidgetEditor({
   settings: CalendarWidgetSettings
   onUpdate: (s: Partial<CalendarWidgetSettings>) => void
 }) {
+  // Convert legacy single calendar to array format for editing
+  const calendars: CalendarSource[] = settings.calendars || (settings.calendarUrl ? [{
+    id: 'legacy',
+    name: settings.calendarName || 'Calendar',
+    url: settings.calendarUrl,
+    color: 'blue' as CalendarColor,
+  }] : [])
+
+  const canAddMore = calendars.length < 3
+
+  const addCalendar = () => {
+    if (!canAddMore) return
+    const availableColors = getAvailableColors(calendars)
+    const newCalendar: CalendarSource = {
+      id: generateId(),
+      name: '',
+      url: '',
+      color: availableColors[0] || 'blue',
+    }
+    onUpdate({
+      calendars: [...calendars, newCalendar],
+      // Clear legacy fields when using multi-calendar
+      calendarUrl: undefined,
+    })
+  }
+
+  const updateCalendar = (id: string, updates: Partial<CalendarSource>) => {
+    onUpdate({
+      calendars: calendars.map(c => c.id === id ? { ...c, ...updates } : c),
+      calendarUrl: undefined,
+    })
+  }
+
+  const removeCalendar = (id: string) => {
+    onUpdate({
+      calendars: calendars.filter(c => c.id !== id),
+      calendarUrl: undefined,
+    })
+  }
+
   return (
     <>
       <Input
-        label="Calendar Name"
+        label="Widget Title"
         value={settings.calendarName || ''}
         onChange={(e) => onUpdate({ calendarName: e.target.value })}
-        placeholder="e.g., Work, Personal, Family"
+        placeholder="Calendar"
       />
-      <Input
-        label="iCal URL"
-        value={settings.calendarUrl || ''}
-        onChange={(e) => onUpdate({ calendarUrl: e.target.value })}
-        placeholder="https://calendar.google.com/calendar/ical/..."
-      />
+
+      {/* Calendar sources */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            Calendars ({calendars.length}/3)
+          </label>
+          {canAddMore && (
+            <Button variant="outline" size="sm" onClick={addCalendar}>
+              <Plus className="w-4 h-4 mr-1" />
+              Add Calendar
+            </Button>
+          )}
+        </div>
+
+        {calendars.length === 0 ? (
+          <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-4 border border-dashed dark:border-gray-700 rounded-lg">
+            No calendars configured. Click "Add Calendar" to add one.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {calendars.map((calendar, index) => {
+              const availableColors = getAvailableColors(calendars, calendar.id)
+              const colorOptions = [
+                ...CALENDAR_COLOR_OPTIONS.filter(c => c.value === calendar.color),
+                ...CALENDAR_COLOR_OPTIONS.filter(c => availableColors.includes(c.value)),
+              ]
+
+              return (
+                <div
+                  key={calendar.id}
+                  className="p-3 border dark:border-gray-700 rounded-lg space-y-3 bg-gray-50 dark:bg-gray-800/50"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Calendar {index + 1}
+                    </span>
+                    <button
+                      onClick={() => removeCalendar(calendar.id)}
+                      className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <Input
+                    label="Calendar Name"
+                    value={calendar.name}
+                    onChange={(e) => updateCalendar(calendar.id, { name: e.target.value })}
+                    placeholder="e.g., Work, Personal"
+                  />
+
+                  <Input
+                    label="iCal URL"
+                    value={calendar.url}
+                    onChange={(e) => updateCalendar(calendar.id, { url: e.target.value })}
+                    placeholder="https://calendar.google.com/calendar/ical/..."
+                  />
+
+                  {/* Color picker */}
+                  <div>
+                    <label className="text-sm font-medium text-gray-900 dark:text-gray-100 block mb-2">
+                      Color
+                    </label>
+                    <div className="flex gap-2">
+                      {colorOptions.map((color) => (
+                        <button
+                          key={color.value}
+                          onClick={() => updateCalendar(calendar.id, { color: color.value })}
+                          className={cn(
+                            'w-8 h-8 rounded-full border-2 transition-all',
+                            color.className,
+                            calendar.color === color.value
+                              ? 'border-gray-900 dark:border-white ring-2 ring-offset-2 ring-gray-400'
+                              : 'border-transparent hover:scale-110'
+                          )}
+                          title={color.label}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
       <Input
         label="Days to show"
         type="number"
@@ -1432,6 +1918,120 @@ function DailyWidgetEditor({
         })}
       </div>
     </div>
+  )
+}
+
+function BitcoinMiningWidgetEditor({
+  settings,
+  onUpdate,
+}: {
+  settings: BitcoinMiningWidgetSettings
+  onUpdate: (s: Partial<BitcoinMiningWidgetSettings>) => void
+}) {
+  return (
+    <>
+      <Input
+        label="Widget Name"
+        value={settings.widgetName || ''}
+        onChange={(e) => onUpdate({ widgetName: e.target.value })}
+        placeholder="Bitcoin Mining"
+      />
+      <Input
+        label="Bitcoin Wallet Address"
+        value={settings.walletAddress || ''}
+        onChange={(e) => onUpdate({ walletAddress: e.target.value })}
+        placeholder="e.g., 3Lz1kdPGRqytQsPnz1md7dPqBxPjhXAuR1"
+      />
+      <p className="text-xs text-gray-500 dark:text-gray-400">
+        Enter your Bitcoin wallet address used on{' '}
+        <a
+          href="https://web.public-pool.io"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-orange-600 dark:text-orange-400 hover:underline"
+        >
+          public-pool.io
+        </a>
+        . Your mining stats will be displayed in the widget.
+      </p>
+      <Input
+        label="Refresh Interval (minutes)"
+        type="number"
+        value={settings.refreshInterval}
+        onChange={(e) => onUpdate({ refreshInterval: parseInt(e.target.value) || 5 })}
+        min={1}
+        max={60}
+      />
+    </>
+  )
+}
+
+// Recipe category options
+const RECIPE_CATEGORY_OPTIONS: { value: RecipeCategory; label: string }[] = [
+  { value: 'all', label: 'All Recipes' },
+  { value: 'appetizer', label: 'Appetizers' },
+  { value: 'entree', label: 'Entrees' },
+  { value: 'soup', label: 'Soups' },
+  { value: 'salad', label: 'Salads' },
+  { value: 'dessert', label: 'Desserts' },
+  { value: 'breakfast', label: 'Breakfast' },
+  { value: 'snack', label: 'Snacks' },
+  { value: 'side', label: 'Side Dishes' },
+  { value: 'drink', label: 'Drinks' },
+]
+
+function RecipesWidgetEditor({
+  settings,
+  onUpdate,
+}: {
+  settings: RecipesWidgetSettings
+  onUpdate: (s: Partial<RecipesWidgetSettings>) => void
+}) {
+  return (
+    <>
+      <Input
+        label="Widget Name"
+        value={settings.widgetName || ''}
+        onChange={(e) => onUpdate({ widgetName: e.target.value })}
+        placeholder="Recipe Suggestions"
+      />
+      <div className="grid grid-cols-2 gap-4">
+        <Input
+          label="Number of Recipes"
+          type="number"
+          value={settings.recipeCount}
+          onChange={(e) => onUpdate({ recipeCount: Math.max(1, Math.min(10, parseInt(e.target.value) || 3)) })}
+          min={1}
+          max={10}
+        />
+        <Select
+          label="Category"
+          value={settings.category}
+          onChange={(e) => onUpdate({ category: e.target.value as RecipeCategory })}
+          options={RECIPE_CATEGORY_OPTIONS}
+        />
+      </div>
+      <p className="text-xs text-gray-500 dark:text-gray-400">
+        Recipes are sourced from{' '}
+        <a
+          href="https://getglyc.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-green-600 dark:text-green-400 hover:underline"
+        >
+          Glyc
+        </a>
+        , a low-glycemic recipe collection.
+      </p>
+      <Input
+        label="Refresh Interval (minutes)"
+        type="number"
+        value={settings.refreshInterval}
+        onChange={(e) => onUpdate({ refreshInterval: parseInt(e.target.value) || 60 })}
+        min={5}
+        max={1440}
+      />
+    </>
   )
 }
 

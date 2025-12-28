@@ -1,4 +1,7 @@
-export type WidgetType = 'news' | 'weather' | 'calendar' | 'stocks' | 'lottery' | 'daily' | 'history' | 'trivia'
+// News category widget types
+export type NewsCategory = 'news-top' | 'news-business' | 'news-tech' | 'news-world' | 'news-sports' | 'news-entertainment' | 'news-custom'
+
+export type WidgetType = 'news' | 'weather' | 'calendar' | 'stocks' | 'lottery' | 'daily' | 'history' | 'trivia' | 'bitcoin-mining' | 'recipes' | NewsCategory
 
 // Layout item type (replaces react-grid-layout Layout)
 export interface LayoutItem {
@@ -17,12 +20,21 @@ export interface WidgetConfig {
   order: number // Display order (1 = top-left, reading left-to-right, top-to-bottom)
 }
 
-export type WidgetSettings = NewsWidgetSettings | WeatherWidgetSettings | CalendarWidgetSettings | StockWidgetSettings | LotteryWidgetSettings | DailyWidgetSettings | HistoryWidgetSettings | TriviaWidgetSettings
+export type WidgetSettings = NewsWidgetSettings | NewsCategoryWidgetSettings | WeatherWidgetSettings | CalendarWidgetSettings | StockWidgetSettings | LotteryWidgetSettings | DailyWidgetSettings | HistoryWidgetSettings | TriviaWidgetSettings | BitcoinMiningWidgetSettings | RecipesWidgetSettings
 
+// Legacy news widget settings (for backwards compatibility)
 export interface NewsWidgetSettings {
   feedUrl: string
   feedName: string
   maxItems: number
+  refreshInterval: number // minutes
+}
+
+// News category widget settings - used by news-top, news-business, etc.
+export interface NewsCategoryWidgetSettings {
+  feedUrl: string      // The selected preset feed URL or custom URL
+  feedName: string     // Display name for the feed
+  maxItems: number     // Max items to display
   refreshInterval: number // minutes
 }
 
@@ -34,9 +46,23 @@ export interface WeatherWidgetSettings {
   showForecast: boolean
 }
 
+// Calendar source with color coding
+export interface CalendarSource {
+  id: string
+  name: string
+  url: string
+  color: CalendarColor
+}
+
+// Available colors for calendar sources
+export type CalendarColor = 'blue' | 'green' | 'purple' | 'red' | 'orange' | 'pink'
+
 export interface CalendarWidgetSettings {
   calendarName: string
-  calendarUrl?: string // iCal URL
+  // Legacy single calendar support (for backwards compatibility)
+  calendarUrl?: string
+  // New multi-calendar support (1-3 calendars)
+  calendars?: CalendarSource[]
   daysToShow: number
 }
 
@@ -62,6 +88,24 @@ export interface HistoryWidgetSettings {
 // Trivia widget has no settings
 export interface TriviaWidgetSettings {
   // No settings - displays daily trivia question
+}
+
+// Bitcoin mining widget settings
+export interface BitcoinMiningWidgetSettings {
+  walletAddress: string  // Bitcoin wallet address for public-pool.io
+  widgetName?: string    // Optional custom name for the widget
+  refreshInterval: number // minutes
+}
+
+// Recipe category types for filtering
+export type RecipeCategory = 'all' | 'appetizer' | 'entree' | 'soup' | 'salad' | 'dessert' | 'breakfast' | 'snack' | 'side' | 'drink'
+
+// Recipe suggestions widget settings
+export interface RecipesWidgetSettings {
+  widgetName?: string    // Optional custom name for the widget
+  recipeCount: number    // Number of recipes to display (1-10)
+  category: RecipeCategory // Recipe category filter
+  refreshInterval: number // minutes
 }
 
 export interface DailyWidgetSettings {
@@ -146,6 +190,9 @@ export interface CalendarEvent {
   end?: string
   allDay: boolean
   location?: string
+  // Multi-calendar support - which calendar this event came from
+  sourceId?: string
+  sourceColor?: CalendarColor
 }
 
 // Geolocation types
@@ -262,6 +309,51 @@ export interface DailyData {
   word?: WordData
   history?: HistoryData
   trivia?: TriviaData
+}
+
+// Bitcoin Mining types (public-pool.io)
+export interface BitcoinMiningWorker {
+  name: string
+  sessionId: string
+  hashrate: number
+  hashrateFormatted: string
+  bestDifficulty: number
+  startTime: string | null
+  lastSeen: string | null
+  lastSeenAgo: string
+  isOnline: boolean
+}
+
+export interface BitcoinMiningPoolStats {
+  totalHashrate: number
+  totalHashrateFormatted: string
+  totalMiners: number
+  blockHeight: number
+  fee: number
+}
+
+export interface BitcoinMiningData {
+  wallet: string
+  walletShort: string
+  bestDifficulty: number
+  workersCount: number
+  totalHashrate: number
+  totalHashrateFormatted: string
+  workers: BitcoinMiningWorker[]
+  poolUrl: string
+  pool?: BitcoinMiningPoolStats
+}
+
+// Recipe Suggestions types (from Glyc API)
+export interface RecipeSuggestion {
+  id: number
+  title: string
+  url: string
+  sourceUrl: string | null
+}
+
+export interface RecipesData {
+  recipes: RecipeSuggestion[]
 }
 
 // API response types
