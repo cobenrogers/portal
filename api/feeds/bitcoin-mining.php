@@ -15,7 +15,7 @@ header('Expires: 0');
 // Debug mode - check if cURL is available
 if (isset($_GET['debug'])) {
     echo json_encode([
-        'version' => 2,
+        'version' => 3,
         'curl_available' => function_exists('curl_init'),
         'php_version' => PHP_VERSION,
         'allow_url_fopen' => ini_get('allow_url_fopen'),
@@ -44,8 +44,9 @@ if (!preg_match('/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$|^bc1[a-zA-HJ-NP-Z0-9]{39,59}
 
 /**
  * Fetch data from URL using cURL (more reliable on shared hosting)
+ * Returns array with 'data' on success, or 'error' on failure
  */
-function fetchUrl(string $url, int $timeout = 15): ?string {
+function fetchUrl(string $url, int $timeout = 15): array {
     // Try cURL first (preferred)
     if (function_exists('curl_init')) {
         $ch = curl_init();
@@ -65,14 +66,19 @@ function fetchUrl(string $url, int $timeout = 15): ?string {
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
+        $curlError = curl_error($ch);
+        $curlErrno = curl_errno($ch);
         curl_close($ch);
 
-        if ($response === false || $httpCode !== 200) {
-            return null;
+        if ($response === false) {
+            return ['error' => "cURL error ($curlErrno): $curlError"];
         }
 
-        return $response;
+        if ($httpCode !== 200) {
+            return ['error' => "HTTP $httpCode from remote API"];
+        }
+
+        return ['data' => $response];
     }
 
     // Fallback to file_get_contents
@@ -92,23 +98,30 @@ function fetchUrl(string $url, int $timeout = 15): ?string {
     ]);
 
     $response = @file_get_contents($url, false, $context);
-    return $response === false ? null : $response;
+    if ($response === false) {
+        return ['error' => 'file_get_contents failed (cURL not available)'];
+    }
+    return ['data' => $response];
 }
 
 /**
  * Fetch client/miner data from public-pool.io
+ * Returns array with 'data' on success, or 'error' on failure
  */
-function fetchMiningData(string $wallet): ?array {
+function fetchMiningData(string $wallet): array {
     // Public Pool API endpoint (port 40557)
     $clientUrl = "https://public-pool.io:40557/api/client/{$wallet}";
 
-    $response = fetchUrl($clientUrl, 15);
-    if ($response === null) {
-        return null;
+    $result = fetchUrl($clientUrl, 15);
+    if (isset($result['error'])) {
+        return ['error' => $result['error']];
     }
 
-    $data = json_decode($response, true);
-    return $data ?: null;
+    $data = json_decode($result['data'], true);
+    if (!$data) {
+        return ['error' => 'Invalid JSON response from API'];
+    }
+    return ['data' => $data];
 }
 
 /**
@@ -117,12 +130,12 @@ function fetchMiningData(string $wallet): ?array {
 function fetchPoolStats(): ?array {
     $poolUrl = "https://public-pool.io:40557/api/pool";
 
-    $response = fetchUrl($poolUrl, 10);
-    if ($response === null) {
+    $result = fetchUrl($poolUrl, 10);
+    if (isset($result['error'])) {
         return null;
     }
 
-    return json_decode($response, true);
+    return json_decode($result['data'], true);
 }
 
 /**
@@ -160,14 +173,19 @@ function getTimeSince(string $timestamp): string {
 }
 
 // Fetch mining data
-$miningData = fetchMiningData($wallet);
-if ($miningData === null) {
+$miningResult = fetchMiningData($wallet);
+if (isset($miningResult['error'])) {
     echo json_encode([
         'success' => false,
-        'error' => 'Failed to fetch mining data. Wallet may not be active on public-pool.io'
+        'error' => 'Failed to fetch mining data: ' . $miningResult['error'],
+        'debug' => [
+            'version' => 3,
+            'wallet' => $wallet
+        ]
     ]);
     exit;
 }
+$miningData = $miningResult['data'];
 
 // Fetch pool stats (optional, don't fail if unavailable)
 $poolStats = fetchPoolStats();
