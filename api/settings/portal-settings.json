@@ -92,6 +92,34 @@
                     "y": 7,
                     "w": 3,
                     "h": 3
+                },
+                {
+                    "i": "trivia-d2rjkkacu",
+                    "x": 0,
+                    "y": 8,
+                    "w": 3,
+                    "h": 3
+                },
+                {
+                    "i": "news-entertainment-0lap5lgrf",
+                    "x": 0,
+                    "y": 9,
+                    "w": 3,
+                    "h": 3
+                },
+                {
+                    "i": "lottery-02ubvqbnu",
+                    "x": 0,
+                    "y": 10,
+                    "w": 3,
+                    "h": 3
+                },
+                {
+                    "i": "bitcoin-mining-fenunp58h",
+                    "x": 0,
+                    "y": 11,
+                    "w": 3,
+                    "h": 3
                 }
             ],
             "md": [
@@ -183,6 +211,34 @@
                     "i": "history-1yml2qvk5",
                     "x": 0,
                     "y": 7,
+                    "w": 3,
+                    "h": 3
+                },
+                {
+                    "i": "trivia-d2rjkkacu",
+                    "x": 0,
+                    "y": 8,
+                    "w": 3,
+                    "h": 3
+                },
+                {
+                    "i": "news-entertainment-0lap5lgrf",
+                    "x": 0,
+                    "y": 9,
+                    "w": 3,
+                    "h": 3
+                },
+                {
+                    "i": "lottery-02ubvqbnu",
+                    "x": 0,
+                    "y": 10,
+                    "w": 3,
+                    "h": 3
+                },
+                {
+                    "i": "bitcoin-mining-fenunp58h",
+                    "x": 0,
+                    "y": 11,
                     "w": 3,
                     "h": 3
                 }
@@ -278,107 +334,38 @@
                     "y": 10,
                     "w": 3,
                     "h": 3
+                },
+                {
+                    "i": "trivia-d2rjkkacu",
+                    "x": 0,
+                    "y": 11,
+                    "w": 3,
+                    "h": 3
+                },
+                {
+                    "i": "news-entertainment-0lap5lgrf",
+                    "x": 0,
+                    "y": 12,
+                    "w": 3,
+                    "h": 3
+                },
+                {
+                    "i": "lottery-02ubvqbnu",
+                    "x": 0,
+                    "y": 13,
+                    "w": 3,
+                    "h": 3
+                },
+                {
+                    "i": "bitcoin-mining-fenunp58h",
+                    "x": 0,
+                    "y": 14,
+                    "w": 3,
+                    "h": 3
                 }
             ]
         },
         "widgets": [
-            {
-                "id": "news-1",
-                "type": "news",
-                "title": "Top News",
-                "settings": {
-                    "feedUrl": "https:\/\/feeds.bbci.co.uk\/news\/rss.xml",
-                    "feedName": "BBC News",
-                    "maxItems": 10,
-                    "refreshInterval": 15
-                }
-            },
-            {
-                "id": "calendar-1",
-                "type": "calendar",
-                "title": "Calendar",
-                "settings": {
-                    "calendarUrl": "https:\/\/calendar.google.com\/calendar\/ical\/thecorogers%40gmail.com\/private-ed67f8bdcbc068e2a7151b118ba4d310\/basic.ics",
-                    "daysToShow": 7,
-                    "calendarName": "TheCORogers"
-                }
-            },
-            {
-                "id": "weather-4bnopokf4",
-                "type": "weather",
-                "title": "Weather",
-                "settings": {
-                    "location": "Arvada",
-                    "units": "imperial",
-                    "showForecast": true
-                }
-            },
-            {
-                "id": "news-qnttqlvb6",
-                "type": "news",
-                "title": "News",
-                "settings": {
-                    "feedUrl": "https:\/\/rss.nytimes.com\/services\/xml\/rss\/nyt\/HomePage.xml",
-                    "feedName": "New York Times",
-                    "maxItems": 10,
-                    "refreshInterval": 15
-                }
-            },
-            {
-                "id": "news-p4xlbxent",
-                "type": "news",
-                "title": "News",
-                "settings": {
-                    "feedUrl": "https:\/\/feeds.npr.org\/1001\/rss.xml",
-                    "feedName": "NPR News",
-                    "maxItems": 10,
-                    "refreshInterval": 15
-                }
-            },
-            {
-                "id": "news-0cn2z54jv",
-                "type": "news",
-                "title": "News",
-                "settings": {
-                    "feedUrl": "https:\/\/moxie.foxnews.com\/google-publisher\/latest.xml",
-                    "feedName": "Fox News",
-                    "maxItems": 10,
-                    "refreshInterval": 15
-                }
-            },
-            {
-                "id": "news-jktjmzo1z",
-                "type": "news",
-                "title": "News",
-                "settings": {
-                    "feedUrl": "https:\/\/search.cnbc.com\/rs\/search\/combinedcms\/view.xml?partnerId=wrss01&id=10001147",
-                    "feedName": "CNBC Top News",
-                    "maxItems": 10,
-                    "refreshInterval": 15
-                }
-            },
-            {
-                "id": "news-pk71425o4",
-                "type": "news",
-                "title": "News",
-                "settings": {
-                    "feedUrl": "https:\/\/techcrunch.com\/feed\/",
-                    "feedName": "TechCrunch",
-                    "maxItems": 10,
-                    "refreshInterval": 15
-                }
-            },
-            {
-                "id": "news-w8vkgi19n",
-                "type": "news",
-                "title": "News",
-                "settings": {
-                    "feedUrl": "https:\/\/news.google.com\/rss\/search?q=site:cnn.com&hl=en-US&gl=US&ceid=US:en",
-                    "feedName": "CNN (via Google News)",
-                    "maxItems": 10,
-                    "refreshInterval": 15
-                }
-            },
             {
                 "id": "stocks-jykybz9gq",
                 "type": "stocks",
@@ -393,19 +380,43 @@
                         "BTC-USD"
                     ],
                     "refreshInterval": 2
-                }
+                },
+                "order": 1
             },
             {
-                "id": "weather-fmuiyl48j",
+                "id": "calendar-1",
+                "type": "calendar",
+                "title": "Calendar",
+                "settings": {
+                    "daysToShow": 7,
+                    "calendarName": "TheCORogers",
+                    "calendars": [
+                        {
+                            "id": "legacy",
+                            "name": "TheCORogers",
+                            "url": "https:\/\/calendar.google.com\/calendar\/ical\/thecorogers%40gmail.com\/private-ed67f8bdcbc068e2a7151b118ba4d310\/basic.ics",
+                            "color": "blue"
+                        },
+                        {
+                            "id": "qi3xczyqq",
+                            "name": "COBenRogers",
+                            "url": "https:\/\/calendar.google.com\/calendar\/ical\/cobenrogers%40gmail.com\/private-4d676b00c6de8404c0469d44a9700d3d\/basic.ics",
+                            "color": "green"
+                        }
+                    ]
+                },
+                "order": 2
+            },
+            {
+                "id": "weather-4bnopokf4",
                 "type": "weather",
                 "title": "Weather",
                 "settings": {
-                    "location": "Evanston, Illinois, United States",
+                    "location": "Arvada",
                     "units": "imperial",
-                    "showForecast": true,
-                    "latitude": 42.04114,
-                    "longitude": -87.69006
-                }
+                    "showForecast": true
+                },
+                "order": 3
             },
             {
                 "id": "daily-w0spewcay",
@@ -419,14 +430,151 @@
                         "history",
                         "trivia"
                     ]
-                }
+                },
+                "order": 4
             },
             {
                 "id": "history-1yml2qvk5",
                 "type": "history",
                 "title": "History",
                 "settings": [],
-                "order": 1
+                "order": 5
+            },
+            {
+                "id": "bitcoin-mining-fenunp58h",
+                "type": "bitcoin-mining",
+                "title": "Bitcoin-mining",
+                "settings": {
+                    "walletAddress": "3Lz1kdPGRqytQsPnz1md7dPqBxPjhXAuR1",
+                    "widgetName": "Bitcoin Mining",
+                    "refreshInterval": 5
+                },
+                "order": 6
+            },
+            {
+                "id": "trivia-d2rjkkacu",
+                "type": "trivia",
+                "title": "Trivia",
+                "settings": [],
+                "order": 7
+            },
+            {
+                "id": "news-1",
+                "type": "news",
+                "title": "Top News",
+                "settings": {
+                    "feedUrl": "https:\/\/feeds.bbci.co.uk\/news\/rss.xml",
+                    "feedName": "BBC News",
+                    "maxItems": 10,
+                    "refreshInterval": 15
+                },
+                "order": 8
+            },
+            {
+                "id": "news-qnttqlvb6",
+                "type": "news",
+                "title": "News",
+                "settings": {
+                    "feedUrl": "https:\/\/rss.nytimes.com\/services\/xml\/rss\/nyt\/HomePage.xml",
+                    "feedName": "New York Times",
+                    "maxItems": 10,
+                    "refreshInterval": 15
+                },
+                "order": 9
+            },
+            {
+                "id": "news-p4xlbxent",
+                "type": "news",
+                "title": "News",
+                "settings": {
+                    "feedUrl": "https:\/\/feeds.npr.org\/1001\/rss.xml",
+                    "feedName": "NPR News",
+                    "maxItems": 10,
+                    "refreshInterval": 15
+                },
+                "order": 10
+            },
+            {
+                "id": "news-0cn2z54jv",
+                "type": "news",
+                "title": "News",
+                "settings": {
+                    "feedUrl": "https:\/\/moxie.foxnews.com\/google-publisher\/latest.xml",
+                    "feedName": "Fox News",
+                    "maxItems": 10,
+                    "refreshInterval": 15
+                },
+                "order": 11
+            },
+            {
+                "id": "news-jktjmzo1z",
+                "type": "news",
+                "title": "News",
+                "settings": {
+                    "feedUrl": "https:\/\/search.cnbc.com\/rs\/search\/combinedcms\/view.xml?partnerId=wrss01&id=10001147",
+                    "feedName": "CNBC Top News",
+                    "maxItems": 10,
+                    "refreshInterval": 15
+                },
+                "order": 12
+            },
+            {
+                "id": "news-pk71425o4",
+                "type": "news",
+                "title": "News",
+                "settings": {
+                    "feedUrl": "https:\/\/techcrunch.com\/feed\/",
+                    "feedName": "TechCrunch",
+                    "maxItems": 10,
+                    "refreshInterval": 15
+                },
+                "order": 13
+            },
+            {
+                "id": "news-w8vkgi19n",
+                "type": "news",
+                "title": "News",
+                "settings": {
+                    "feedUrl": "https:\/\/news.google.com\/rss\/search?q=site:cnn.com&hl=en-US&gl=US&ceid=US:en",
+                    "feedName": "CNN (via Google News)",
+                    "maxItems": 10,
+                    "refreshInterval": 15
+                },
+                "order": 14
+            },
+            {
+                "id": "weather-fmuiyl48j",
+                "type": "weather",
+                "title": "Weather",
+                "settings": {
+                    "location": "Evanston, Illinois, United States",
+                    "units": "imperial",
+                    "showForecast": true,
+                    "latitude": 42.041139999999999,
+                    "longitude": -87.690060000000003
+                },
+                "order": 15
+            },
+            {
+                "id": "news-entertainment-0lap5lgrf",
+                "type": "news-entertainment",
+                "title": "Hollywood Reporter",
+                "settings": {
+                    "feedUrl": "https:\/\/www.hollywoodreporter.com\/feed\/",
+                    "feedName": "Hollywood Reporter",
+                    "maxItems": 10,
+                    "refreshInterval": 15
+                },
+                "order": 16
+            },
+            {
+                "id": "lottery-02ubvqbnu",
+                "type": "lottery",
+                "title": "Lottery",
+                "settings": {
+                    "refreshInterval": 30
+                },
+                "order": 17
             }
         ]
     },

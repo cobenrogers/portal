@@ -5,7 +5,7 @@ import { fetchBitcoinMiningData } from '@/services/api'
 import { cn } from '@/lib/utils'
 import type { BitcoinMiningWidgetSettings, BitcoinMiningData, BitcoinMiningWorker } from '@/types'
 
-const PUBLIC_POOL_URL = 'https://web.public-pool.io'
+const PUBLIC_POOL_URL = 'https://web.public-pool.io/#/app'
 
 interface BitcoinMiningWidgetProps {
   settings: BitcoinMiningWidgetSettings
