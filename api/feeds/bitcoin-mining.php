@@ -3,6 +3,7 @@
  * Bitcoin Mining API - Fetches mining stats from public-pool.io
  *
  * Usage: GET /api/feeds/bitcoin-mining.php?wallet=3Lz1kdPGRqytQsPnz1md7dPqBxPjhXAuR1
+ * Version: 2 (cURL support)
  */
 
 header('Content-Type: application/json');
@@ -10,6 +11,17 @@ header('Access-Control-Allow-Origin: *');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 header('Pragma: no-cache');
 header('Expires: 0');
+
+// Debug mode - check if cURL is available
+if (isset($_GET['debug'])) {
+    echo json_encode([
+        'version' => 2,
+        'curl_available' => function_exists('curl_init'),
+        'php_version' => PHP_VERSION,
+        'allow_url_fopen' => ini_get('allow_url_fopen'),
+    ]);
+    exit;
+}
 
 // Get wallet address from query parameter
 $wallet = $_GET['wallet'] ?? '';
