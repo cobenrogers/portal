@@ -18,17 +18,53 @@ if ($category) {
 }
 $url = $glycApiUrl . '?' . http_build_query($params);
 
-// Fetch from Glyc API
-$context = stream_context_create([
-    'http' => [
-        'timeout' => 10,
-        'header' => "Accept: application/json\r\n"
-    ]
-]);
+/**
+ * Fetch URL using cURL (preferred) or file_get_contents fallback
+ */
+function fetchUrl(string $url, int $timeout = 10): ?string {
+    // Try cURL first (preferred)
+    if (function_exists('curl_init')) {
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTPHEADER => [
+                'User-Agent: Portal Dashboard/1.0',
+                'Accept: application/json'
+            ],
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2
+        ]);
 
-$response = @file_get_contents($url, false, $context);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
 
-if ($response === false) {
+        if ($response === false || $httpCode !== 200) {
+            return null;
+        }
+
+        return $response;
+    }
+
+    // Fallback to file_get_contents
+    $context = stream_context_create([
+        'http' => [
+            'timeout' => $timeout,
+            'header' => "Accept: application/json\r\n"
+        ]
+    ]);
+
+    $response = @file_get_contents($url, false, $context);
+    return $response === false ? null : $response;
+}
+
+$response = fetchUrl($url);
+
+if ($response === null) {
     http_response_code(502);
     echo json_encode([
         'success' => false,

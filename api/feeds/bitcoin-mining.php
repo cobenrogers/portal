@@ -31,12 +31,39 @@ if (!preg_match('/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$|^bc1[a-zA-HJ-NP-Z0-9]{39,59}
 }
 
 /**
- * Fetch client/miner data from public-pool.io
+ * Fetch data from URL using cURL (more reliable on shared hosting)
  */
-function fetchMiningData(string $wallet): ?array {
-    // Public Pool API endpoint (port 40557)
-    $clientUrl = "https://public-pool.io:40557/api/client/{$wallet}";
+function fetchUrl(string $url, int $timeout = 15): ?string {
+    // Try cURL first (preferred)
+    if (function_exists('curl_init')) {
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTPHEADER => [
+                'User-Agent: Portal Dashboard/1.0',
+                'Accept: application/json'
+            ],
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2
+        ]);
 
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($response === false || $httpCode !== 200) {
+            return null;
+        }
+
+        return $response;
+    }
+
+    // Fallback to file_get_contents
     $context = stream_context_create([
         'http' => [
             'method' => 'GET',
@@ -44,7 +71,7 @@ function fetchMiningData(string $wallet): ?array {
                 'User-Agent: Portal Dashboard/1.0',
                 'Accept: application/json'
             ],
-            'timeout' => 15
+            'timeout' => $timeout
         ],
         'ssl' => [
             'verify_peer' => true,
@@ -52,17 +79,24 @@ function fetchMiningData(string $wallet): ?array {
         ]
     ]);
 
-    $response = @file_get_contents($clientUrl, false, $context);
-    if ($response === false) {
+    $response = @file_get_contents($url, false, $context);
+    return $response === false ? null : $response;
+}
+
+/**
+ * Fetch client/miner data from public-pool.io
+ */
+function fetchMiningData(string $wallet): ?array {
+    // Public Pool API endpoint (port 40557)
+    $clientUrl = "https://public-pool.io:40557/api/client/{$wallet}";
+
+    $response = fetchUrl($clientUrl, 15);
+    if ($response === null) {
         return null;
     }
 
     $data = json_decode($response, true);
-    if (!$data) {
-        return null;
-    }
-
-    return $data;
+    return $data ?: null;
 }
 
 /**
@@ -71,23 +105,8 @@ function fetchMiningData(string $wallet): ?array {
 function fetchPoolStats(): ?array {
     $poolUrl = "https://public-pool.io:40557/api/pool";
 
-    $context = stream_context_create([
-        'http' => [
-            'method' => 'GET',
-            'header' => [
-                'User-Agent: Portal Dashboard/1.0',
-                'Accept: application/json'
-            ],
-            'timeout' => 10
-        ],
-        'ssl' => [
-            'verify_peer' => true,
-            'verify_peer_name' => true
-        ]
-    ]);
-
-    $response = @file_get_contents($poolUrl, false, $context);
-    if ($response === false) {
+    $response = fetchUrl($poolUrl, 10);
+    if ($response === null) {
         return null;
     }
 
