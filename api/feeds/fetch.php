@@ -159,18 +159,37 @@ if (!filter_var($feedUrl, FILTER_VALIDATE_URL)) {
     respond(false, null, 'Invalid feed URL');
 }
 
-// Fetch the feed
-$context = stream_context_create([
-    'http' => [
-        'timeout' => 10,
-        'user_agent' => 'Portal Feed Reader/1.0'
-    ]
+// Fetch the feed using cURL for better compatibility
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => $feedUrl,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_FOLLOWLOCATION => true,
+    CURLOPT_MAXREDIRS => 5,
+    CURLOPT_TIMEOUT => 15,
+    CURLOPT_CONNECTTIMEOUT => 10,
+    CURLOPT_SSL_VERIFYPEER => true,
+    CURLOPT_HTTPHEADER => [
+        'Accept: application/rss+xml, application/xml, application/atom+xml, text/xml, */*',
+        'Accept-Language: en-US,en;q=0.9',
+        'Cache-Control: no-cache',
+    ],
+    CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; PortalFeedReader/1.0; +https://bennernet.com)',
 ]);
 
-$content = @file_get_contents($feedUrl, false, $context);
+$content = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$error = curl_error($ch);
+curl_close($ch);
 
-if ($content === false) {
-    respond(false, null, 'Failed to fetch feed');
+if ($content === false || $httpCode >= 400) {
+    respond(false, null, $error ?: "Failed to fetch feed (HTTP $httpCode)");
+}
+
+// Check if we got HTML instead of XML (some sites redirect feeds to homepage)
+$trimmedContent = ltrim($content);
+if (stripos($trimmedContent, '<!DOCTYPE html') === 0 || stripos($trimmedContent, '<html') === 0) {
+    respond(false, null, 'Feed URL returned HTML instead of RSS/XML. The feed may be disabled or the URL may be incorrect.');
 }
 
 // Parse XML
