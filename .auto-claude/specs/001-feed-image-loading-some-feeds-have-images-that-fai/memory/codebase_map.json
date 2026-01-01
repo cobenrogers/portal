@@ -1,0 +1,15 @@
+{
+  "discovered_files": {
+    "api/feeds/image-proxy.php": {
+      "description": "PHP image proxy endpoint that fetches external images with proper Referer header (set to image origin domain) to bypass hotlink protection. Includes SSRF prevention via filter_var with FILTER_FLAG_NO_PRIV_RANGE, MIME type verification, 5MB size limit, and browser-like User-Agent.",
+      "category": "api",
+      "discovered_at": "2026-01-01T19:40:10.591879+00:00"
+    },
+    "src/components/common/FeedImage.tsx": {
+      "description": "Reusable FeedImage component with error state handling. Props: src (string|null|undefined), alt, className, fallbackElement (ReactNode). Uses getProxiedImageUrl to route through image proxy. Shows fallbackElement when no src or on error.",
+      "category": "component",
+      "discovered_at": "2026-01-01T19:45:12.254847+00:00"
+    }
+  },
+  "last_updated": "2026-01-01T19:45:12.254861+00:00"
+}
