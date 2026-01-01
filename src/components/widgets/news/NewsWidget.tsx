@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { WidgetWrapper } from '../WidgetWrapper'
+import { FeedImage } from '@/components/common/FeedImage'
 import { fetchFeed } from '@/services/api'
 import { truncateText } from '@/lib/utils'
 import type { NewsWidgetSettings, FeedItem } from '@/types'
@@ -66,19 +67,14 @@ export function NewsWidget({ settings, onSettingsClick }: NewsWidgetProps) {
                 rel="noopener noreferrer"
                 className="group flex gap-2"
               >
-                {item.image && item.image !== 'undefined' ? (
-                  <img
-                    src={item.image}
-                    alt=""
-                    className="w-12 h-12 object-cover rounded flex-shrink-0"
-                    onError={(e) => {
-                      // Hide broken images
-                      (e.target as HTMLImageElement).style.display = 'none'
-                    }}
-                  />
-                ) : (
-                  <span className="text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0">•</span>
-                )}
+                <FeedImage
+                  src={item.image !== 'undefined' ? item.image : null}
+                  alt=""
+                  className="w-12 h-12 object-cover rounded flex-shrink-0"
+                  fallbackElement={
+                    <span className="text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0">•</span>
+                  }
+                />
                 <span className="text-xs font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 leading-tight">
                   {truncateText(item.title, 80)}
                 </span>
