@@ -20,6 +20,18 @@ function respond($success, $data = null, $error = null) {
 }
 
 function getImageFromItem($item, $namespaces) {
+    // Try to get content:encoded first (WordPress feeds) - most reliable for blog images
+    // This handles CDATA wrapped content
+    $contentNs = 'http://purl.org/rss/1.0/modules/content/';
+    $contentChildren = $item->children($contentNs);
+    if ($contentChildren && isset($contentChildren->encoded)) {
+        $encoded = (string)$contentChildren->encoded;
+        // Look for first img tag with src attribute
+        if (preg_match('/<img[^>]+src\s*=\s*["\']([^"\']+)["\']/', $encoded, $matches)) {
+            return $matches[1];
+        }
+    }
+
     // Try media namespace (various formats)
     if (isset($namespaces['media'])) {
         $media = $item->children($namespaces['media']);
@@ -84,15 +96,6 @@ function getImageFromItem($item, $namespaces) {
             if (preg_match('/<img[^>]+src=["\']([^"\']+)["\']/', $encoded, $matches)) {
                 return $matches[1];
             }
-        }
-    }
-
-    // Fallback: try direct content:encoded access (different XML parsing)
-    $contentEncoded = $item->children('http://purl.org/rss/1.0/modules/content/');
-    if (isset($contentEncoded->encoded)) {
-        $encoded = (string)$contentEncoded->encoded;
-        if (preg_match('/<img[^>]+src=["\']([^"\']+)["\']/', $encoded, $matches)) {
-            return $matches[1];
         }
     }
 
