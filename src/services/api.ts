@@ -191,6 +191,14 @@ export async function fetchBitcoinMiningData(walletAddress: string): Promise<Bit
   return response.data
 }
 
+// Image Proxy API - Bypasses hotlink protection for feed images
+export function getProxiedImageUrl(imageUrl: string | null | undefined): string {
+  if (!imageUrl) {
+    return ''
+  }
+  return `${API_BASE}/feeds/image-proxy.php?url=${encodeURIComponent(imageUrl)}`
+}
+
 // Recipe Suggestions API (Glyc - getglyc.com)
 export async function fetchRecipeSuggestions(
   count: number = 3,
