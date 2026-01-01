@@ -22,9 +22,10 @@ describe('FeedImage', () => {
   })
 
   it('renders with empty alt by default', () => {
-    render(<FeedImage src="https://example.com/image.jpg" />)
+    const { container } = render(<FeedImage src="https://example.com/image.jpg" />)
 
-    expect(screen.getByRole('img')).toHaveAttribute('alt', '')
+    const img = container.querySelector('img')
+    expect(img).toHaveAttribute('alt', '')
   })
 
   it('renders fallback when src is null', () => {
@@ -58,37 +59,39 @@ describe('FeedImage', () => {
   })
 
   it('renders fallback on image error', () => {
-    render(
+    const { container } = render(
       <FeedImage
         src="https://example.com/broken.jpg"
         fallbackElement={<div data-testid="fallback">Error loading image</div>}
       />
     )
 
-    const img = screen.getByRole('img')
-    fireEvent.error(img)
+    const img = container.querySelector('img')
+    expect(img).toBeInTheDocument()
+    fireEvent.error(img!)
 
-    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+    expect(container.querySelector('img')).not.toBeInTheDocument()
     expect(screen.getByTestId('fallback')).toBeInTheDocument()
   })
 
   it('applies className to the image', () => {
-    render(
+    const { container } = render(
       <FeedImage
         src="https://example.com/image.jpg"
         className="rounded-lg w-full"
       />
     )
 
-    const img = screen.getByRole('img')
+    const img = container.querySelector('img')
     expect(img).toHaveClass('rounded-lg')
     expect(img).toHaveClass('w-full')
   })
 
   it('uses lazy loading by default', () => {
-    render(<FeedImage src="https://example.com/image.jpg" />)
+    const { container } = render(<FeedImage src="https://example.com/image.jpg" />)
 
-    expect(screen.getByRole('img')).toHaveAttribute('loading', 'lazy')
+    const img = container.querySelector('img')
+    expect(img).toHaveAttribute('loading', 'lazy')
   })
 
   it('passes additional props to the image element', () => {
@@ -109,8 +112,9 @@ describe('FeedImage', () => {
   it('renders nothing on error with no fallback', () => {
     const { container } = render(<FeedImage src="https://example.com/broken.jpg" />)
 
-    const img = screen.getByRole('img')
-    fireEvent.error(img)
+    const img = container.querySelector('img')
+    expect(img).toBeInTheDocument()
+    fireEvent.error(img!)
 
     expect(container).toBeEmptyDOMElement()
   })
