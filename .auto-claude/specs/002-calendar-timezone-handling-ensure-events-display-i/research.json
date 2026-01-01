@@ -1,0 +1,330 @@
+{
+  "integrations_researched": [
+    {
+      "name": "Native Intl.DateTimeFormat API",
+      "type": "browser_api",
+      "description": "Built-in browser API for timezone-aware date/time formatting. Already available in all modern browsers - NO INSTALLATION REQUIRED.",
+      "verified_package": {
+        "name": "N/A - Native Browser API",
+        "install_command": "N/A - Built into JavaScript",
+        "version": "ES2018+ / ES Internationalization API",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": ["No import needed - globally available"],
+        "initialization": "const formatter = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' });",
+        "key_functions": [
+          "Intl.DateTimeFormat().resolvedOptions().timeZone // Gets user's IANA timezone",
+          "new Intl.DateTimeFormat(locale, options).format(date) // Formats date in timezone",
+          "new Intl.DateTimeFormat(locale, { timeZone: 'UTC' }).format(date) // Format in specific TZ"
+        ],
+        "example_usage": {
+          "detect_user_timezone": "const userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone; // 'America/New_York'",
+          "format_in_user_timezone": "new Date(isoString).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })",
+          "format_with_timezone_display": "new Date(isoString).toLocaleString('en-US', { timeZone: userTZ, timeZoneName: 'short' })"
+        },
+        "verified_against": "MDN Web Docs - Intl.DateTimeFormat"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": []
+      },
+      "browser_support": {
+        "chrome": "24+",
+        "firefox": "29+",
+        "safari": "10+",
+        "edge": "12+",
+        "node": "0.12+"
+      },
+      "gotchas": [
+        "Returns IANA timezone names (e.g., 'America/New_York'), not UTC offsets",
+        "System timezone detection reads from user's OS settings, not actual location",
+        "All modern browsers support this - no polyfill needed for this project"
+      ],
+      "research_sources": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat",
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat/resolvedOptions",
+        "https://blog.castle.io/how-to-detect-browser-time-zone-using-javascript/"
+      ],
+      "recommendation": "PRIMARY CHOICE - Already used in the codebase via toLocaleTimeString(). Extend usage for timezone detection."
+    },
+    {
+      "name": "date-fns-tz",
+      "type": "library",
+      "description": "Timezone support for date-fns. Lightweight, uses browser Intl API internally so no timezone data bundled.",
+      "verified_package": {
+        "name": "date-fns-tz",
+        "install_command": "npm install date-fns date-fns-tz",
+        "version": "3.2.0 (for date-fns v3)",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import { formatInTimeZone, toZonedTime, fromZonedTime } from 'date-fns-tz'",
+          "import { format } from 'date-fns'"
+        ],
+        "initialization": "const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;",
+        "key_functions": [
+          "formatInTimeZone(date, timeZone, formatStr) // Format date in specific timezone",
+          "toZonedTime(date, timeZone) // Convert UTC to zoned time",
+          "fromZonedTime(date, timeZone) // Convert zoned time to UTC"
+        ],
+        "example_usage": {
+          "format_in_tz": "formatInTimeZone(new Date(isoString), 'America/New_York', 'h:mm a')",
+          "convert_to_local": "toZonedTime(utcDate, userTimeZone)"
+        },
+        "verified_against": "npm registry + GitHub README"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": ["date-fns (peer dependency)"]
+      },
+      "bundle_size": "~3KB (uses native Intl API, no timezone data bundled)",
+      "gotchas": [
+        "Requires date-fns as peer dependency",
+        "Uses browser Intl API - same browser support requirements"
+      ],
+      "research_sources": [
+        "https://www.npmjs.com/package/date-fns-tz",
+        "https://github.com/marnusw/date-fns-tz",
+        "https://blog.date-fns.org/v40-with-time-zone-support/"
+      ],
+      "recommendation": "OPTIONAL - Consider if more complex date operations are needed beyond what native API provides."
+    },
+    {
+      "name": "@date-fns/tz (Official v4)",
+      "type": "library",
+      "description": "Official first-party timezone support for date-fns v4+. Smaller bundle than date-fns-tz.",
+      "verified_package": {
+        "name": "@date-fns/tz",
+        "install_command": "npm install date-fns@4 @date-fns/tz",
+        "version": "1.2.0+",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import { TZDate } from '@date-fns/tz'",
+          "import { tz } from '@date-fns/tz'"
+        ],
+        "initialization": "const date = new TZDate(2024, 0, 1, 'America/New_York');",
+        "key_functions": [
+          "new TZDate(isoString, timezone) // Create timezone-aware date",
+          "tz(timeZone) // Create context for date-fns functions"
+        ],
+        "verified_against": "npm registry + date-fns blog"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": ["date-fns@4 (peer dependency)"]
+      },
+      "bundle_size": "761B (TZDateMini) to 1KB (full)",
+      "gotchas": [
+        "Requires date-fns v4+ (major version upgrade from v3)",
+        "Newer package - less community examples"
+      ],
+      "research_sources": [
+        "https://www.npmjs.com/package/@date-fns/tz",
+        "https://blog.date-fns.org/v40-with-time-zone-support/"
+      ],
+      "recommendation": "FUTURE OPTION - Use if upgrading to date-fns v4."
+    },
+    {
+      "name": "Luxon",
+      "type": "library",
+      "description": "Full-featured immutable date/time library with built-in timezone support. Created by Moment.js contributor.",
+      "verified_package": {
+        "name": "luxon",
+        "install_command": "npm install luxon",
+        "version": "3.7.2",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import { DateTime } from 'luxon'"
+        ],
+        "initialization": "const dt = DateTime.now().setZone('America/New_York');",
+        "key_functions": [
+          "DateTime.fromISO(isoString).setZone(timezone) // Parse and convert timezone",
+          "DateTime.now().zoneName // Get current timezone",
+          "dt.toLocaleString(DateTime.TIME_SIMPLE) // Format time"
+        ],
+        "example_usage": {
+          "parse_with_tz": "DateTime.fromISO('2024-01-01T10:00:00Z').setZone('America/New_York')",
+          "format_local": "DateTime.fromISO(isoString).toLocaleString(DateTime.TIME_SIMPLE)"
+        },
+        "verified_against": "npm registry + GitHub + Official docs"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": []
+      },
+      "bundle_size": "~60KB minified",
+      "gotchas": [
+        "Larger bundle size than date-fns alternatives",
+        "Different API paradigm - immutable objects with chaining",
+        "Uses native Intl API - same browser support"
+      ],
+      "research_sources": [
+        "https://www.npmjs.com/package/luxon",
+        "https://github.com/moment/luxon",
+        "https://moment.github.io/luxon/"
+      ],
+      "recommendation": "ALTERNATIVE - Good choice if preferring immutable API, but overkill for this use case."
+    },
+    {
+      "name": "Day.js with Timezone Plugin",
+      "type": "library",
+      "description": "Lightweight Moment.js alternative with timezone plugin. Very small bundle size.",
+      "verified_package": {
+        "name": "dayjs",
+        "install_command": "npm install dayjs",
+        "version": "1.11.13",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import dayjs from 'dayjs'",
+          "import utc from 'dayjs/plugin/utc'",
+          "import timezone from 'dayjs/plugin/timezone'"
+        ],
+        "initialization": "dayjs.extend(utc); dayjs.extend(timezone);",
+        "key_functions": [
+          "dayjs.tz(date, timezone) // Parse in timezone",
+          "dayjs(date).tz(timezone) // Convert to timezone",
+          "dayjs.tz.guess() // Detect user timezone"
+        ],
+        "example_usage": {
+          "convert_to_local": "dayjs(isoString).tz(userTimezone).format('h:mm A')",
+          "detect_tz": "dayjs.tz.guess() // 'America/New_York'"
+        },
+        "verified_against": "npm registry + Official docs"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": []
+      },
+      "bundle_size": "2KB core + plugins",
+      "gotchas": [
+        "Requires extending with utc and timezone plugins",
+        "Uses native Intl API under the hood",
+        "Mutable by default (unlike Luxon)"
+      ],
+      "research_sources": [
+        "https://day.js.org/docs/en/plugin/timezone",
+        "https://www.npmjs.com/package/dayjs"
+      ],
+      "recommendation": "ALTERNATIVE - Very lightweight, good Moment.js replacement if needed."
+    },
+    {
+      "name": "PHP DateTimeZone",
+      "type": "backend_api",
+      "description": "PHP's built-in timezone handling class for proper iCal TZID processing on the server.",
+      "verified_package": {
+        "name": "Built-in PHP class",
+        "install_command": "N/A - Built into PHP 5.2.0+",
+        "version": "PHP 5.2.0+",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": ["No import needed - built into PHP"],
+        "initialization": "$tz = new DateTimeZone('America/New_York');",
+        "key_functions": [
+          "new DateTimeZone($tzid) // Create timezone object",
+          "$datetime->setTimezone($tz) // Convert to timezone",
+          "$datetime->format(DateTime::ATOM) // ISO 8601 with offset"
+        ],
+        "example_ical_handling": {
+          "parse_tzid": "$tz = new DateTimeZone('America/New_York'); $dt = new DateTime($dateStr, $tz);",
+          "convert_to_utc": "$dt->setTimezone(new DateTimeZone('UTC'));",
+          "output_iso": "$dt->format(DateTime::ATOM) // 2024-01-01T15:00:00+00:00"
+        },
+        "verified_against": "PHP Manual"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": ["php.ini (date.timezone setting)"],
+        "dependencies": []
+      },
+      "gotchas": [
+        "iCal TZID values must be valid IANA timezone names to work with DateTimeZone",
+        "Some iCal feeds use non-standard TZID values (e.g., 'US-Eastern') that won't work directly",
+        "Always output in UTC or with explicit timezone offset for frontend consumption",
+        "Need to handle both floating time (no TZID) and UTC (Z suffix) formats"
+      ],
+      "research_sources": [
+        "https://www.php.net/manual/en/class.datetimezone.php",
+        "https://icalendar.org/iCalendar-RFC-5545/3-2-19-time-zone-identifier.html"
+      ],
+      "recommendation": "REQUIRED - Backend must properly parse iCal TZID and return UTC timestamps."
+    }
+  ],
+  "current_codebase_analysis": {
+    "frontend_stack": {
+      "framework": "React 19 + TypeScript",
+      "build_tool": "Vite",
+      "date_libraries": "None - uses native JavaScript Date",
+      "current_timezone_handling": "Uses toLocaleTimeString() which auto-converts to browser timezone"
+    },
+    "backend_stack": {
+      "language": "PHP",
+      "calendar_parser": "Custom iCal parser in api/feeds/calendar.php",
+      "current_timezone_handling": "Uses date('c') which returns server timezone, not event timezone"
+    },
+    "identified_issues": [
+      "PHP parser extracts TZID parameter but doesn't use it for conversion",
+      "Events are returned in server timezone, not UTC",
+      "All-day events may have edge cases with timezone boundaries",
+      "Frontend correctly uses toLocaleTimeString() but receives times in wrong timezone from backend"
+    ]
+  },
+  "best_practices": {
+    "storage": "Store all event times in UTC format",
+    "frontend_display": "Convert UTC to user's local timezone on display",
+    "timezone_detection": "Use Intl.DateTimeFormat().resolvedOptions().timeZone",
+    "recurring_events": "Maintain local time (not UTC) for recurring events across DST transitions",
+    "all_day_events": "Store as date-only (no time component) to avoid timezone issues"
+  },
+  "unverified_claims": [],
+  "recommendations": [
+    {
+      "priority": 1,
+      "action": "Fix PHP backend to properly parse TZID and output UTC timestamps",
+      "rationale": "Root cause - backend returns times in server timezone, not event timezone or UTC"
+    },
+    {
+      "priority": 2,
+      "action": "Use native Intl API (already in use) - NO NEW LIBRARY NEEDED",
+      "rationale": "The codebase already uses toLocaleTimeString() correctly. Just needs UTC input from backend."
+    },
+    {
+      "priority": 3,
+      "action": "Add timezone display option for users crossing timezones",
+      "rationale": "Optional UX enhancement - show timezone abbreviation next to times"
+    }
+  ],
+  "implementation_approach": {
+    "backend_changes": {
+      "description": "Update PHP iCal parser to handle TZID and output UTC",
+      "steps": [
+        "Parse TZID parameter from iCal DTSTART/DTEND lines",
+        "Create DateTime with proper timezone from TZID",
+        "Convert to UTC before outputting",
+        "Return ISO 8601 strings with Z suffix (UTC)"
+      ]
+    },
+    "frontend_changes": {
+      "description": "Frontend already handles timezone conversion correctly via native Date/Intl API",
+      "steps": [
+        "Verify toLocaleTimeString() usage (already correct)",
+        "Optionally add timezone detection for debugging/display",
+        "No new library dependencies needed"
+      ]
+    }
+  },
+  "created_at": "2026-01-01T00:00:00Z"
+}

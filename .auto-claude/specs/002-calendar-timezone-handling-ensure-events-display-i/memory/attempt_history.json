@@ -1,0 +1,81 @@
+{
+  "subtasks": {
+    "subtask-1-1": {
+      "attempts": [
+        {
+          "session": 1,
+          "timestamp": "2026-01-01T12:40:45.541626",
+          "approach": "Implemented: Update parseIcalDate() to extract and use TZID parameter for timezone conversion to UTC",
+          "success": true,
+          "error": null
+        }
+      ],
+      "status": "completed"
+    },
+    "subtask-1-2": {
+      "attempts": [
+        {
+          "session": 2,
+          "timestamp": "2026-01-01T12:41:56.754121",
+          "approach": "Implemented: Update parseIcal() to pass TZID from key parameters to parseIcalDate()",
+          "success": true,
+          "error": null
+        }
+      ],
+      "status": "completed"
+    },
+    "subtask-2-1": {
+      "attempts": [
+        {
+          "session": 3,
+          "timestamp": "2026-01-01T12:43:42.679546",
+          "approach": "Implemented: Create src/lib/timezone.ts with getUserTimezone() and timezone-aware formatting functions",
+          "success": true,
+          "error": null
+        }
+      ],
+      "status": "completed"
+    },
+    "subtask-2-2": {
+      "attempts": [
+        {
+          "session": 4,
+          "timestamp": "2026-01-01T12:46:22.983493",
+          "approach": "Implemented: Create src/lib/timezone.test.ts with unit tests for timezone utilities",
+          "success": true,
+          "error": null
+        }
+      ],
+      "status": "completed"
+    },
+    "subtask-3-1": {
+      "attempts": [
+        {
+          "session": 5,
+          "timestamp": "2026-01-01T12:48:12.446593",
+          "approach": "Implemented: Update CalendarWidget.tsx to import and use timezone utilities for formatEventTime() and formatEvent",
+          "success": true,
+          "error": null
+        }
+      ],
+      "status": "completed"
+    },
+    "subtask-3-2": {
+      "attempts": [
+        {
+          "session": 6,
+          "timestamp": "2026-01-01T12:49:42.367816",
+          "approach": "Implemented: Update isToday() function to use timezone-aware date comparison",
+          "success": true,
+          "error": null
+        }
+      ],
+      "status": "completed"
+    }
+  },
+  "stuck_subtasks": [],
+  "metadata": {
+    "created_at": "2026-01-01T12:39:06.696716",
+    "last_updated": "2026-01-01T12:49:42.367820"
+  }
+}

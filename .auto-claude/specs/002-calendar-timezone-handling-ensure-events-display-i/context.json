@@ -1,0 +1,44 @@
+{
+  "task_description": "Calendar timezone handling: Ensure events display in user's local timezone correctly",
+  "scoped_services": ["main", "api"],
+  "files_to_modify": {
+    "main": [
+      "src/components/widgets/calendar/CalendarWidget.tsx",
+      "src/lib/utils.ts"
+    ],
+    "api": [
+      "api/feeds/calendar.php"
+    ]
+  },
+  "files_to_create": {
+    "main": [
+      "src/lib/timezone.ts",
+      "src/lib/timezone.test.ts"
+    ]
+  },
+  "files_to_reference": [
+    "src/lib/utils.ts",
+    "src/lib/utils.test.ts",
+    "src/components/widgets/history/HistoryWidget.tsx"
+  ],
+  "patterns": {
+    "utility_function_pattern": "Export individual functions (not default), accept ISO 8601 strings, return formatted strings with type annotations",
+    "test_pattern": "Use describe/it from vitest, group tests by function, test edge cases explicitly",
+    "date_formatting_pattern": "Use toLocaleTimeString/toLocaleDateString with explicit options object",
+    "php_date_pattern": "Return associative arrays with 'datetime' and 'allDay' keys, use date('c') for ISO 8601"
+  },
+  "existing_implementations": {
+    "description": "CalendarWidget.tsx has formatEventTime() and formatEventDate() functions that use toLocaleTimeString(). calendar.php has parseIcalDate() that handles YYYYMMDD and YYYYMMDDTHHMMSS formats but ignores TZID parameter.",
+    "relevant_files": [
+      "src/components/widgets/calendar/CalendarWidget.tsx",
+      "api/feeds/calendar.php",
+      "src/lib/utils.ts"
+    ]
+  },
+  "current_issues": {
+    "backend": "parseIcalDate() ignores TZID parameter from iCal, uses server timezone for calculations",
+    "frontend": "formatEventTime/formatEventDate don't use explicit timezone option, isToday() may fail with timezone mismatch"
+  },
+  "created_at": "2026-01-01T12:30:27.748103",
+  "updated_at": "2026-01-01T18:45:00.000Z"
+}

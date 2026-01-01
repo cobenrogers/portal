@@ -1,0 +1,20 @@
+{
+  "discovered_files": {
+    "api/feeds/calendar.php": {
+      "description": "parseIcalDate() now accepts TZID parameter and converts timezone-aware dates to UTC. TZID is extracted from iCal key parameters (e.g., DTSTART;TZID=America/New_York) and stored separately as DTSTART_TZID/DTEND_TZID in currentEvent array before being passed to parseIcalDate().",
+      "category": "timezone-handling",
+      "discovered_at": "2026-01-01T19:40:36.355841+00:00"
+    },
+    "src/lib/timezone.ts": {
+      "description": "New timezone utility file with functions for user timezone detection (getUserTimezone), timezone-aware formatting (formatInUserTimezone, formatEventTime, formatEventDate), and helpers (isToday, toUTCISOString, getDatePortion). All-day events use date portion only to prevent timezone shifting.",
+      "category": "utilities",
+      "discovered_at": "2026-01-01T19:43:34.597899+00:00"
+    },
+    "src/lib/timezone.test.ts": {
+      "description": "Comprehensive unit tests for timezone utilities covering: getUserTimezone (IANA identifier validation), formatInUserTimezone (time/date formatting), formatEventTime (all-day events, time ranges), formatEventDate (Today/Tomorrow/formatted dates), isToday, toUTCISOString (ISO 8601 UTC format), getDatePortion (YYYY-MM-DD extraction). Uses vitest with vi.useFakeTimers() for consistent date testing.",
+      "category": "testing",
+      "discovered_at": "2026-01-01T19:46:12.307816+00:00"
+    }
+  },
+  "last_updated": "2026-01-01T19:46:12.307845+00:00"
+}
