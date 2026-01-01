@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { fetchFeed, fetchWeather, getSettings, saveSettings } from './api'
+import { fetchFeed, fetchWeather, getSettings, saveSettings, getProxiedImageUrl } from './api'
 
 describe('API Service', () => {
   beforeEach(() => {
@@ -154,6 +154,42 @@ describe('API Service', () => {
       await expect(
         saveSettings({ dashboardLayout: { layouts: { lg: [], md: [], sm: [] }, widgets: [] }, theme: 'light' })
       ).rejects.toThrow()
+    })
+  })
+
+  describe('getProxiedImageUrl', () => {
+    it('returns empty string for null input', () => {
+      const result = getProxiedImageUrl(null)
+      expect(result).toBe('')
+    })
+
+    it('returns empty string for undefined input', () => {
+      const result = getProxiedImageUrl(undefined)
+      expect(result).toBe('')
+    })
+
+    it('returns empty string for empty string input', () => {
+      const result = getProxiedImageUrl('')
+      expect(result).toBe('')
+    })
+
+    it('returns proxied URL for valid image URL', () => {
+      const imageUrl = 'https://example.com/image.jpg'
+      const result = getProxiedImageUrl(imageUrl)
+      expect(result).toContain('/api/feeds/image-proxy.php?url=')
+      expect(result).toContain(encodeURIComponent(imageUrl))
+    })
+
+    it('properly encodes special characters in URL', () => {
+      const imageUrl = 'https://example.com/image.jpg?size=large&format=webp'
+      const result = getProxiedImageUrl(imageUrl)
+      expect(result).toContain(encodeURIComponent(imageUrl))
+    })
+
+    it('handles URLs with spaces and unicode characters', () => {
+      const imageUrl = 'https://example.com/my image.jpg'
+      const result = getProxiedImageUrl(imageUrl)
+      expect(result).toContain(encodeURIComponent(imageUrl))
     })
   })
 })
