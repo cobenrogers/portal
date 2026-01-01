@@ -4,7 +4,12 @@
  * Fetches external images to bypass hotlink protection and CORS issues
  *
  * Security: Validates URLs to prevent SSRF attacks
+ * Caching: Stores images locally with hash-based filenames
  */
+
+// Cache configuration
+define('CACHE_DIR', __DIR__ . '/../cache/images');
+define('CACHE_TTL', 86400); // 24 hours in seconds
 
 // Get image URL from query parameter
 $imageUrl = $_GET['url'] ?? '';
@@ -133,6 +138,104 @@ function isAllowedMimeType(string $mimeType): bool {
 }
 
 /**
+ * Get file extension from MIME type
+ */
+function getExtensionFromMimeType(string $mimeType): string {
+    $baseMimeType = strtolower(trim(explode(';', $mimeType)[0]));
+
+    $mimeToExt = [
+        'image/jpeg' => 'jpg',
+        'image/jpg' => 'jpg',
+        'image/png' => 'png',
+        'image/gif' => 'gif',
+        'image/webp' => 'webp',
+        'image/svg+xml' => 'svg',
+        'image/avif' => 'avif',
+        'image/bmp' => 'bmp',
+        'image/ico' => 'ico',
+        'image/x-icon' => 'ico',
+        'image/vnd.microsoft.icon' => 'ico',
+    ];
+
+    return $mimeToExt[$baseMimeType] ?? 'bin';
+}
+
+/**
+ * Generate cache file path from URL
+ * Uses MD5 hash of URL for filename, with extension from MIME type
+ */
+function getCacheFilePath(string $url, string $extension = 'bin'): string {
+    $hash = md5($url);
+    return CACHE_DIR . '/' . $hash . '.' . $extension;
+}
+
+/**
+ * Find existing cache file for URL (any extension)
+ * Returns cache path and content type if valid cache exists
+ */
+function findCachedImage(string $url): ?array {
+    $hash = md5($url);
+    $pattern = CACHE_DIR . '/' . $hash . '.*';
+    $files = glob($pattern);
+
+    if (empty($files)) {
+        return null;
+    }
+
+    $cacheFile = $files[0];
+
+    // Check if cache is still valid (not expired)
+    if (!file_exists($cacheFile) || (time() - filemtime($cacheFile)) > CACHE_TTL) {
+        // Cache expired, delete it
+        @unlink($cacheFile);
+        return null;
+    }
+
+    // Determine content type from extension
+    $extension = pathinfo($cacheFile, PATHINFO_EXTENSION);
+    $extToMime = [
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'gif' => 'image/gif',
+        'webp' => 'image/webp',
+        'svg' => 'image/svg+xml',
+        'avif' => 'image/avif',
+        'bmp' => 'image/bmp',
+        'ico' => 'image/x-icon',
+    ];
+
+    $contentType = $extToMime[$extension] ?? 'application/octet-stream';
+
+    return [
+        'path' => $cacheFile,
+        'content_type' => $contentType,
+    ];
+}
+
+/**
+ * Save image data to cache
+ * Silently fails if cache directory is not writable
+ */
+function saveToCache(string $url, string $data, string $contentType): void {
+    // Ensure cache directory exists
+    if (!is_dir(CACHE_DIR)) {
+        @mkdir(CACHE_DIR, 0755, true);
+    }
+
+    // Check if directory is writable
+    if (!is_writable(CACHE_DIR)) {
+        return; // Gracefully fail - serve image without caching
+    }
+
+    $extension = getExtensionFromMimeType($contentType);
+    $cacheFile = getCacheFilePath($url, $extension);
+
+    // Write to cache (silently fail if error)
+    @file_put_contents($cacheFile, $data);
+}
+
+/**
  * Fetch image using cURL with proper headers for hotlink bypass
  */
 function fetchImage(string $url, int $timeout = 10, int $maxSize = 5242880): ?array {
@@ -201,16 +304,32 @@ if (!validateUrl($imageUrl)) {
     respondError(400, 'Invalid or disallowed image URL');
 }
 
-// Fetch the image
+// Check cache first
+$cached = findCachedImage($imageUrl);
+if ($cached !== null) {
+    // Serve from cache
+    header('Content-Type: ' . $cached['content_type']);
+    header('Cache-Control: public, max-age=' . CACHE_TTL);
+    header('Access-Control-Allow-Origin: *');
+    header('X-Cache: HIT');
+    readfile($cached['path']);
+    exit;
+}
+
+// Fetch the image from origin
 $result = fetchImage($imageUrl);
 
 if ($result === null) {
     respondError(502, 'Failed to fetch image');
 }
 
+// Save to cache (gracefully handles errors)
+saveToCache($imageUrl, $result['data'], $result['content_type']);
+
 // Output the image with appropriate headers
 header('Content-Type: ' . $result['content_type']);
-header('Cache-Control: public, max-age=86400'); // Cache for 24 hours
+header('Cache-Control: public, max-age=' . CACHE_TTL);
 header('Access-Control-Allow-Origin: *');
+header('X-Cache: MISS');
 
 echo $result['data'];
