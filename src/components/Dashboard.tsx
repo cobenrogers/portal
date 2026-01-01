@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useState, useEffect } from 'react'
-import { NewsWidget, WeatherWidget, CalendarWidget, StockWidget, LotteryWidget, DailyWidget, HistoryWidget, TriviaWidget, BitcoinMiningWidget, RecipesWidget } from './widgets'
+import { NewsWidget, WeatherWidget, CalendarWidget, StockWidget, LotteryWidget, DailyWidget, HistoryWidget, TriviaWidget, BitcoinMiningWidget, RecipesWidget, BlogWidget } from './widgets'
 import { cn } from '@/lib/utils'
 import type {
   WidgetConfig,
@@ -13,6 +13,7 @@ import type {
   DailyWidgetSettings,
   BitcoinMiningWidgetSettings,
   RecipesWidgetSettings,
+  BlogWidgetSettings,
 } from '@/types'
 
 // Helper to check if widget type is a news category
@@ -76,6 +77,8 @@ export function Dashboard({ layout }: DashboardProps) {
         return <BitcoinMiningWidget settings={widget.settings as BitcoinMiningWidgetSettings} />
       case 'recipes':
         return <RecipesWidget settings={widget.settings as RecipesWidgetSettings} />
+      case 'blog':
+        return <BlogWidget settings={widget.settings as BlogWidgetSettings} />
       default:
         return <div className="p-4">Unknown widget type</div>
     }

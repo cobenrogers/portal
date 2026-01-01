@@ -23,6 +23,7 @@ import type {
   BitcoinMiningWidgetSettings,
   RecipesWidgetSettings,
   RecipeCategory,
+  BlogWidgetSettings,
   GeoLocation,
   StockSearchResult,
   BackgroundSettings,
@@ -51,6 +52,7 @@ const MAIN_WIDGET_TYPES: WidgetTypeConfig[] = [
   { value: 'lottery', label: 'Lottery' },
   { value: 'bitcoin-mining', label: 'Bitcoin Mining' },
   { value: 'recipes', label: 'Recipe Suggestions' },
+  { value: 'blog', label: 'Blog' },
 ]
 
 // Daily widget types (shown when Daily category is expanded)
@@ -377,6 +379,13 @@ function getDefaultWidgetSettings(type: WidgetType): WidgetConfig['settings'] {
         category: 'all',
         refreshInterval: 60,
       } as RecipesWidgetSettings
+    case 'blog':
+      return {
+        blogName: 'Blog',
+        feedUrl: '',
+        maxArticles: 5,
+        refreshInterval: 30,
+      } as BlogWidgetSettings
     default:
       return {} // Fallback for any unhandled types
   }
@@ -919,7 +928,8 @@ function WidgetEditor({
               widget.type === 'history' && 'bg-amber-600',
               widget.type === 'trivia' && 'bg-cyan-500',
               widget.type === 'bitcoin-mining' && 'bg-orange-500',
-              widget.type === 'recipes' && 'bg-green-500'
+              widget.type === 'recipes' && 'bg-green-500',
+              widget.type === 'blog' && 'bg-indigo-500'
             )}
           />
           <span className="font-medium text-gray-900 dark:text-gray-100 truncate">
@@ -943,6 +953,8 @@ function WidgetEditor({
               ? (widget.settings as BitcoinMiningWidgetSettings).widgetName || 'Bitcoin Mining'
               : widget.type === 'recipes'
               ? (widget.settings as RecipesWidgetSettings).widgetName || 'Recipe Suggestions'
+              : widget.type === 'blog'
+              ? (widget.settings as BlogWidgetSettings).blogName || 'Blog'
               : 'Widget'}
           </span>
           <span className="text-xs text-gray-500 dark:text-gray-400 uppercase flex-shrink-0">
@@ -1004,6 +1016,12 @@ function WidgetEditor({
           {widget.type === 'recipes' && (
             <RecipesWidgetEditor
               settings={widget.settings as RecipesWidgetSettings}
+              onUpdate={onUpdate}
+            />
+          )}
+          {widget.type === 'blog' && (
+            <BlogWidgetEditor
+              settings={widget.settings as BlogWidgetSettings}
               onUpdate={onUpdate}
             />
           )}
@@ -2031,6 +2049,53 @@ function RecipesWidgetEditor({
         min={5}
         max={1440}
       />
+    </>
+  )
+}
+
+function BlogWidgetEditor({
+  settings,
+  onUpdate,
+}: {
+  settings: BlogWidgetSettings
+  onUpdate: (s: Partial<BlogWidgetSettings>) => void
+}) {
+  return (
+    <>
+      <Input
+        label="Blog Name"
+        value={settings.blogName || ''}
+        onChange={(e) => onUpdate({ blogName: e.target.value })}
+        placeholder="e.g., IBD Movement"
+      />
+      <Input
+        label="RSS Feed URL"
+        value={settings.feedUrl || ''}
+        onChange={(e) => onUpdate({ feedUrl: e.target.value })}
+        placeholder="https://example.com/feed/"
+      />
+      <p className="text-xs text-gray-500 dark:text-gray-400">
+        Enter the RSS feed URL for any blog. For WordPress sites, this is usually{' '}
+        <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">yoursite.com/feed/</code>
+      </p>
+      <div className="grid grid-cols-2 gap-4">
+        <Input
+          label="Max Articles"
+          type="number"
+          value={settings.maxArticles}
+          onChange={(e) => onUpdate({ maxArticles: Math.max(1, Math.min(10, parseInt(e.target.value) || 5)) })}
+          min={1}
+          max={10}
+        />
+        <Input
+          label="Refresh (minutes)"
+          type="number"
+          value={settings.refreshInterval}
+          onChange={(e) => onUpdate({ refreshInterval: parseInt(e.target.value) || 30 })}
+          min={5}
+          max={1440}
+        />
+      </div>
     </>
   )
 }

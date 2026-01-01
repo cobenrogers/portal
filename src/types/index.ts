@@ -1,7 +1,7 @@
 // News category widget types
 export type NewsCategory = 'news-top' | 'news-business' | 'news-tech' | 'news-world' | 'news-sports' | 'news-entertainment' | 'news-custom'
 
-export type WidgetType = 'news' | 'weather' | 'calendar' | 'stocks' | 'lottery' | 'daily' | 'history' | 'trivia' | 'bitcoin-mining' | 'recipes' | NewsCategory
+export type WidgetType = 'news' | 'weather' | 'calendar' | 'stocks' | 'lottery' | 'daily' | 'history' | 'trivia' | 'bitcoin-mining' | 'recipes' | 'blog' | NewsCategory
 
 // Layout item type (replaces react-grid-layout Layout)
 export interface LayoutItem {
@@ -20,7 +20,7 @@ export interface WidgetConfig {
   order: number // Display order (1 = top-left, reading left-to-right, top-to-bottom)
 }
 
-export type WidgetSettings = NewsWidgetSettings | NewsCategoryWidgetSettings | WeatherWidgetSettings | CalendarWidgetSettings | StockWidgetSettings | LotteryWidgetSettings | DailyWidgetSettings | HistoryWidgetSettings | TriviaWidgetSettings | BitcoinMiningWidgetSettings | RecipesWidgetSettings
+export type WidgetSettings = NewsWidgetSettings | NewsCategoryWidgetSettings | WeatherWidgetSettings | CalendarWidgetSettings | StockWidgetSettings | LotteryWidgetSettings | DailyWidgetSettings | HistoryWidgetSettings | TriviaWidgetSettings | BitcoinMiningWidgetSettings | RecipesWidgetSettings | BlogWidgetSettings
 
 // Legacy news widget settings (for backwards compatibility)
 export interface NewsWidgetSettings {
@@ -105,6 +105,14 @@ export interface RecipesWidgetSettings {
   widgetName?: string    // Optional custom name for the widget
   recipeCount: number    // Number of recipes to display (1-10)
   category: RecipeCategory // Recipe category filter
+  refreshInterval: number // minutes
+}
+
+// Blog widget settings
+export interface BlogWidgetSettings {
+  blogName: string       // Display name for the blog
+  feedUrl: string        // RSS feed URL
+  maxArticles: number    // Number of articles to display (1-10)
   refreshInterval: number // minutes
 }
 
