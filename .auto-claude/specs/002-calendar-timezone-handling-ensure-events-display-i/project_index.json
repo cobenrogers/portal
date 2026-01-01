@@ -1,0 +1,63 @@
+{
+  "project_root": "/Users/benjaminrogers/VSCode/BennernetLLC/agents/portal",
+  "project_type": "single",
+  "services": {
+    "main": {
+      "name": "main",
+      "path": "/Users/benjaminrogers/VSCode/BennernetLLC/agents/portal",
+      "language": "TypeScript",
+      "framework": "React",
+      "type": "frontend",
+      "package_manager": "npm",
+      "default_port": 3000,
+      "build_tool": "Vite",
+      "styling": "Tailwind CSS",
+      "dev_command": "npm run dev",
+      "key_directories": {
+        "src": {
+          "path": "src",
+          "purpose": "Source code"
+        },
+        "api": {
+          "path": "api",
+          "purpose": "API endpoints"
+        }
+      },
+      "entry_point": "src/App.tsx",
+      "dependencies": [
+        "@tailwindcss/vite",
+        "@types/react-grid-layout",
+        "clsx",
+        "lucide-react",
+        "react",
+        "react-dom",
+        "react-grid-layout",
+        "tailwind-merge",
+        "tailwindcss"
+      ],
+      "dev_dependencies": [
+        "@eslint/js",
+        "@testing-library/jest-dom",
+        "@testing-library/react",
+        "@testing-library/user-event",
+        "@types/node",
+        "@types/react",
+        "@types/react-dom",
+        "@vitejs/plugin-react",
+        "eslint",
+        "eslint-plugin-react-hooks"
+      ],
+      "testing": "Vitest"
+    }
+  },
+  "infrastructure": {
+    "ci": "GitHub Actions",
+    "ci_workflows": [
+      "deploy.yml"
+    ]
+  },
+  "conventions": {
+    "js_linting": "ESLint",
+    "typescript": true
+  }
+}

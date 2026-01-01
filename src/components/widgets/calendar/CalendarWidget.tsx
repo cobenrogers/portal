@@ -3,6 +3,7 @@ import { Calendar as CalendarIcon, Clock, MapPin } from 'lucide-react'
 import { WidgetWrapper } from '../WidgetWrapper'
 import { fetchCalendarEvents } from '@/services/api'
 import { cn } from '@/lib/utils'
+import { formatEventTime, formatEventDate, isToday } from '@/lib/timezone'
 import type { CalendarWidgetSettings, CalendarEvent, CalendarColor, CalendarSource } from '@/types'
 
 // Color classes for calendar sources
@@ -42,44 +43,6 @@ const CALENDAR_COLORS: Record<CalendarColor, { border: string; bg: string; dot: 
 interface CalendarWidgetProps {
   settings: CalendarWidgetSettings
   onSettingsClick?: () => void
-}
-
-function formatEventTime(start: string, end?: string, allDay?: boolean): string {
-  if (allDay) return 'All day'
-  const startDate = new Date(start)
-  const timeStr = startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-  if (end) {
-    const endDate = new Date(end)
-    const endTimeStr = endDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-    return `${timeStr} - ${endTimeStr}`
-  }
-  return timeStr
-}
-
-function formatEventDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  const today = new Date()
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-
-  today.setHours(0, 0, 0, 0)
-  tomorrow.setHours(0, 0, 0, 0)
-  const eventDate = new Date(date)
-  eventDate.setHours(0, 0, 0, 0)
-
-  if (eventDate.getTime() === today.getTime()) return 'Today'
-  if (eventDate.getTime() === tomorrow.getTime()) return 'Tomorrow'
-  return date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
-}
-
-function isToday(dateStr: string): boolean {
-  const date = new Date(dateStr)
-  const today = new Date()
-  return (
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
-  )
 }
 
 // Helper to get calendar sources from settings (handles legacy single calendar)
@@ -158,7 +121,7 @@ export function CalendarWidget({ settings, onSettingsClick }: CalendarWidgetProp
   const groupedEvents = useMemo(() => {
     const groups: Record<string, CalendarEvent[]> = {}
     for (const event of events) {
-      const dateKey = formatEventDate(event.start)
+      const dateKey = formatEventDate(event.start, event.allDay)
       if (!groups[dateKey]) groups[dateKey] = []
       groups[dateKey].push(event)
     }
@@ -237,7 +200,7 @@ export function CalendarWidget({ settings, onSettingsClick }: CalendarWidgetProp
                       className={cn(
                         'text-sm p-2 rounded border-l-2',
                         colorClasses.border,
-                        isToday(event.start)
+                        isToday(event.start, event.allDay)
                           ? colorClasses.bg
                           : 'bg-gray-50 dark:bg-gray-700/50'
                       )}

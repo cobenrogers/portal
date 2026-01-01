@@ -1,0 +1,101 @@
+{
+  "complexity": "standard",
+  "workflow_type": "feature",
+  "confidence": 0.85,
+  "reasoning": "Calendar timezone handling affects 2-4 files (calendar.php backend, CalendarWidget.tsx frontend, possibly types and api service). The codebase already has date handling patterns using native JS Date APIs. Research is needed for proper iCal TZID parsing and timezone best practices, but no external integrations or infrastructure changes are required.",
+
+  "analysis": {
+    "scope": {
+      "estimated_files": 4,
+      "estimated_services": 1,
+      "is_cross_cutting": false,
+      "notes": "Changes isolated to calendar widget system: calendar.php (backend parser), CalendarWidget.tsx (frontend display), potentially api.ts (add timezone param), types/index.ts (add timezone to CalendarEvent type)"
+    },
+    "integrations": {
+      "external_services": [],
+      "new_dependencies": [],
+      "research_needed": true,
+      "notes": "No new external services. May consider date-fns-tz or Luxon for proper timezone handling, but native Intl API may suffice. Research needed on iCal TZID specification and best practices."
+    },
+    "infrastructure": {
+      "docker_changes": false,
+      "database_changes": false,
+      "config_changes": false,
+      "notes": "No infrastructure changes. PHP backend and React frontend already configured."
+    },
+    "knowledge": {
+      "patterns_exist": true,
+      "research_required": true,
+      "unfamiliar_tech": ["iCal TZID specification", "timezone edge cases"],
+      "notes": "Existing date patterns use native Date API with toLocaleTimeString/toLocaleDateString. Backend already parses iCal but doesn't use TZID. Research needed for proper timezone offset handling and DST edge cases."
+    },
+    "risk": {
+      "level": "medium",
+      "concerns": [
+        "Breaking existing calendar functionality",
+        "DST transition edge cases",
+        "All-day events across timezone boundaries",
+        "Server timezone vs client timezone mismatch"
+      ],
+      "notes": "Timezone handling is notoriously tricky. Current implementation uses server timezone for filtering but client timezone for display, which can cause events to appear on wrong days. All-day events need special handling."
+    }
+  },
+
+  "recommended_phases": [
+    "discovery",
+    "requirements",
+    "research",
+    "context",
+    "spec_writing",
+    "planning",
+    "validation"
+  ],
+
+  "flags": {
+    "needs_research": true,
+    "needs_self_critique": false,
+    "needs_infrastructure_setup": false
+  },
+
+  "validation_recommendations": {
+    "risk_level": "medium",
+    "skip_validation": false,
+    "minimal_mode": false,
+    "test_types_required": ["unit", "integration"],
+    "security_scan_required": false,
+    "staging_deployment_required": false,
+    "reasoning": "Timezone handling affects date calculations and event display. Unit tests needed for timezone conversion functions and iCal parsing. Integration tests needed to verify correct display across different timezone scenarios. No security concerns as this doesn't touch auth or user data."
+  },
+
+  "current_state_analysis": {
+    "backend": {
+      "file": "api/feeds/calendar.php",
+      "issues": [
+        "parseIcalDate() ignores TZID parameter from iCal",
+        "Uses server timezone for 'today midnight' calculation",
+        "UTC indicator (Z suffix) handled but not TZID offsets"
+      ]
+    },
+    "frontend": {
+      "file": "src/components/widgets/calendar/CalendarWidget.tsx",
+      "status": "Mostly correct - uses toLocaleTimeString() which respects browser timezone",
+      "issues": [
+        "Relies on dates being correctly converted by backend",
+        "isToday() comparison may be wrong if event stored in different timezone"
+      ]
+    }
+  },
+
+  "recommended_approach": {
+    "strategy": "Store events in UTC, convert on display",
+    "steps": [
+      "Update PHP parser to properly handle TZID and convert all times to UTC",
+      "Ensure allDay events preserve calendar date regardless of timezone",
+      "Send UTC timestamps to frontend with original timezone info",
+      "Frontend converts UTC to user's local timezone for display",
+      "Add test cases for DST transitions and cross-timezone events"
+    ]
+  },
+
+  "created_at": "2026-01-01T18:25:00.000Z"
+}

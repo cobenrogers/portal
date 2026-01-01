@@ -19,11 +19,13 @@ function respond($success, $data = null, $error = null) {
     exit;
 }
 
-function parseIcalDate($dateStr, $timezone = null) {
+function parseIcalDate($dateStr, $tzid = null) {
     // Handle YYYYMMDD format (all-day events)
+    // All-day events should not be timezone-converted to preserve the date
     if (preg_match('/^\d{8}$/', $dateStr)) {
+        $formatted = substr($dateStr, 0, 4) . '-' . substr($dateStr, 4, 2) . '-' . substr($dateStr, 6, 2);
         return [
-            'datetime' => date('c', strtotime($dateStr)),
+            'datetime' => $formatted . 'T00:00:00Z',
             'allDay' => true
         ];
     }
@@ -36,18 +38,39 @@ function parseIcalDate($dateStr, $timezone = null) {
         $formatted = substr($dt, 0, 4) . '-' . substr($dt, 4, 2) . '-' . substr($dt, 6, 2) . 'T' .
                      substr($dt, 9, 2) . ':' . substr($dt, 11, 2) . ':' . substr($dt, 13, 2);
 
-        if ($isUtc) {
-            $formatted .= 'Z';
+        // If TZID provided and date is not already UTC, convert to UTC
+        if ($tzid && !$isUtc) {
+            try {
+                $tz = new DateTimeZone($tzid);
+                $dateTime = new DateTime($formatted, $tz);
+                $dateTime->setTimezone(new DateTimeZone('UTC'));
+                return [
+                    'datetime' => $dateTime->format('Y-m-d\TH:i:s\Z'),
+                    'allDay' => false
+                ];
+            } catch (Exception $e) {
+                // Fall back to treating as UTC if TZID is invalid
+            }
         }
 
+        // If already UTC or no TZID provided, output as UTC
+        if ($isUtc) {
+            return [
+                'datetime' => $formatted . 'Z',
+                'allDay' => false
+            ];
+        }
+
+        // No TZID and not UTC - assume local time and convert via strtotime
         return [
-            'datetime' => date('c', strtotime($formatted)),
+            'datetime' => gmdate('Y-m-d\TH:i:s\Z', strtotime($formatted)),
             'allDay' => false
         ];
     }
 
+    // Fallback for other formats
     return [
-        'datetime' => date('c', strtotime($dateStr)),
+        'datetime' => gmdate('Y-m-d\TH:i:s\Z', strtotime($dateStr)),
         'allDay' => false
     ];
 }
@@ -162,6 +185,20 @@ function parseIcal($content, $rangeStart = null, $rangeEnd = null) {
         $keyParts = explode(';', $key);
         $key = $keyParts[0];
 
+        // Extract TZID if present in parameters
+        $tzid = null;
+        foreach ($keyParts as $part) {
+            if (strpos($part, 'TZID=') === 0) {
+                $tzid = substr($part, 5);
+                break;
+            }
+        }
+
+        // Store TZID separately for DTSTART and DTEND
+        if ($inEvent && ($key === 'DTSTART' || $key === 'DTEND') && $tzid) {
+            $currentEvent[$key . '_TZID'] = $tzid;
+        }
+
         if ($key === 'BEGIN' && $value === 'VEVENT') {
             $inEvent = true;
             $currentEvent = [];
@@ -169,8 +206,10 @@ function parseIcal($content, $rangeStart = null, $rangeEnd = null) {
             $inEvent = false;
 
             if (!empty($currentEvent['SUMMARY']) && !empty($currentEvent['DTSTART'])) {
-                $start = parseIcalDate($currentEvent['DTSTART']);
-                $end = !empty($currentEvent['DTEND']) ? parseIcalDate($currentEvent['DTEND']) : null;
+                $startTzid = $currentEvent['DTSTART_TZID'] ?? null;
+                $endTzid = $currentEvent['DTEND_TZID'] ?? $startTzid;
+                $start = parseIcalDate($currentEvent['DTSTART'], $startTzid);
+                $end = !empty($currentEvent['DTEND']) ? parseIcalDate($currentEvent['DTEND'], $endTzid) : null;
 
                 $baseEvent = [
                     'id' => $currentEvent['UID'] ?? md5(json_encode($currentEvent)),
