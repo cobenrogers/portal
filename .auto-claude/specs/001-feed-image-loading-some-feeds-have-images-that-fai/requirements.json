@@ -1,0 +1,4 @@
+{
+  "task_description": "**Feed image loading**: Some feeds have images that fail to load (CDN issues, hotlink protection)",
+  "workflow_type": "feature"
+}

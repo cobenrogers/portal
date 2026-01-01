@@ -1,0 +1,286 @@
+{
+  "integrations_researched": [
+    {
+      "name": "PHP cURL Image Proxy",
+      "type": "infrastructure",
+      "verified_package": {
+        "name": "PHP cURL extension",
+        "install_command": "Built-in PHP extension (curl)",
+        "version": "PHP 7.0+",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [],
+        "initialization": "$ch = curl_init();",
+        "key_functions": [
+          "curl_init()",
+          "curl_setopt($ch, CURLOPT_URL, $url)",
+          "curl_setopt($ch, CURLOPT_RETURNTRANSFER, true)",
+          "curl_setopt($ch, CURLOPT_REFERER, $originalDomain)",
+          "curl_setopt($ch, CURLOPT_USERAGENT, $browserAgent)",
+          "curl_setopt($ch, CURLOPT_HTTPHEADER, $headers)",
+          "curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true)",
+          "curl_setopt($ch, CURLOPT_TIMEOUT, 10)",
+          "curl_exec($ch)",
+          "curl_getinfo($ch, CURLINFO_CONTENT_TYPE)",
+          "curl_close($ch)"
+        ],
+        "verified_against": "https://www.php.net/manual/en/function.curl-setopt.php"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": ["curl PHP extension (usually pre-installed)"]
+      },
+      "infrastructure": {
+        "requires_docker": false,
+        "notes": "cURL extension is typically enabled by default in PHP installations"
+      },
+      "gotchas": [
+        "Must set appropriate Referer header to match the origin domain to bypass hotlink protection",
+        "Must set User-Agent to mimic browser requests",
+        "Should implement caching to avoid repeatedly fetching same images",
+        "Need to validate image URLs to prevent SSRF attacks",
+        "Should handle timeouts gracefully (recommend 10s max)",
+        "Must set correct Content-Type header when outputting proxied images",
+        "Consider implementing rate limiting to prevent abuse"
+      ],
+      "research_sources": [
+        "https://www.php.net/manual/en/function.curl-setopt.php",
+        "https://zhipenghe.me/blog/2025/Bypassing-Image-Anti-Hotlinking-with-Nginx/",
+        "https://wp-mix.com/php-spoofing-headers-curl/",
+        "https://gist.github.com/iovar/9091078"
+      ]
+    },
+    {
+      "name": "PHP MIME Type Detection",
+      "type": "library",
+      "verified_package": {
+        "name": "PHP built-in functions",
+        "install_command": "Built-in (no installation needed)",
+        "version": "PHP 5.3+",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [],
+        "initialization": "",
+        "key_functions": [
+          "mime_content_type($filename)",
+          "image_type_to_mime_type(exif_imagetype($filename))",
+          "getimagesize($filename)[2] -> image_type_to_mime_type()",
+          "curl_getinfo($ch, CURLINFO_CONTENT_TYPE)"
+        ],
+        "verified_against": "https://www.php.net/manual/en/function.mime-content-type.php"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": []
+      },
+      "infrastructure": {
+        "requires_docker": false
+      },
+      "gotchas": [
+        "mime_content_type() requires fileinfo extension (usually enabled by default)",
+        "For remote URLs, use curl_getinfo() with CURLINFO_CONTENT_TYPE instead",
+        "Validate MIME type is actually an image type before serving"
+      ],
+      "research_sources": [
+        "https://www.php.net/manual/en/function.mime-content-type.php",
+        "https://www.oreilly.com/library/view/php-in-a/0596100671/ch16s16.html"
+      ]
+    },
+    {
+      "name": "React Image Error Handling",
+      "type": "pattern",
+      "verified_package": {
+        "name": "Native React",
+        "install_command": "Already installed (react)",
+        "version": "React 17+",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import { useState, useCallback } from 'react'"
+        ],
+        "initialization": "const [imgError, setImgError] = useState(false)",
+        "key_functions": [
+          "onError={(e) => handleImageError(e)}",
+          "onLoad={(e) => handleImageLoad(e)}",
+          "(e.target as HTMLImageElement).src = fallbackSrc",
+          "setImgError(true) // trigger fallback UI"
+        ],
+        "verified_against": "https://www.kindacode.com/article/react-typescript-image-onload-onerror-events/"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": []
+      },
+      "infrastructure": {
+        "requires_docker": false
+      },
+      "gotchas": [
+        "onError only fires once per img element - changing src won't re-trigger",
+        "Must use state to properly re-render with fallback",
+        "For TypeScript, cast e.target to HTMLImageElement",
+        "Consider showing placeholder while loading (onLoad callback)",
+        "Hide broken image icon before fallback loads by using CSS or conditional rendering"
+      ],
+      "research_sources": [
+        "https://www.kindacode.com/article/react-typescript-image-onload-onerror-events/",
+        "https://dev.to/eidellev/handling-broken-images-in-react-4oo2",
+        "https://medium.com/@webcore1/react-fallback-for-broken-images-strategy-a8dfa9c1be1e"
+      ]
+    },
+    {
+      "name": "react-image",
+      "type": "library",
+      "verified_package": {
+        "name": "react-image",
+        "install_command": "npm install react-image --save",
+        "version": "latest (check npm for current version)",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import { Img } from 'react-image'",
+          "import { useImage } from 'react-image'"
+        ],
+        "initialization": "const { src, isLoading, error } = useImage({ srcList: [imageUrl, fallbackUrl] })",
+        "key_functions": [
+          "<Img src={url} loader={<Spinner />} unloader={<Fallback />} />",
+          "useImage({ srcList: ['primary.jpg', 'fallback.jpg'] })",
+          "srcList accepts array of fallback URLs",
+          "loader prop for loading state",
+          "unloader prop for error state"
+        ],
+        "verified_against": "https://github.com/mbrevda/react-image"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": ["react >=16.8 (hooks support)", "react-dom >=16.8", "@babel/runtime"]
+      },
+      "infrastructure": {
+        "requires_docker": false
+      },
+      "gotchas": [
+        "Uses React Suspense by default - wrap in Suspense boundary",
+        "Tries loading images immediately (no lazy loading built-in)",
+        "For lazy loading, combine with react-intersection-observer or native loading='lazy'",
+        "No built-in TypeScript types - may need custom declarations",
+        "Bundle size impact - evaluate if native solution is sufficient"
+      ],
+      "research_sources": [
+        "https://github.com/mbrevda/react-image",
+        "https://www.npmjs.com/package/react-image"
+      ]
+    },
+    {
+      "name": "Native Browser Lazy Loading",
+      "type": "pattern",
+      "verified_package": {
+        "name": "HTML loading attribute",
+        "install_command": "No installation needed (browser native)",
+        "version": "Supported in all modern browsers",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [],
+        "initialization": "",
+        "key_functions": [
+          "<img loading='lazy' src={url} />",
+          "<img loading='eager' src={url} /> // disable lazy loading"
+        ],
+        "verified_against": "https://www.freecodecamp.org/news/how-to-lazy-load-images-in-react/"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": []
+      },
+      "infrastructure": {
+        "requires_docker": false
+      },
+      "gotchas": [
+        "Supported in Chrome 77+, Firefox 75+, Edge 79+, Safari 15.4+",
+        "No control over loading threshold (browser determines when to load)",
+        "May not work well with dynamically changing src attributes",
+        "For more control, use Intersection Observer API"
+      ],
+      "research_sources": [
+        "https://www.freecodecamp.org/news/how-to-lazy-load-images-in-react/",
+        "https://web.dev/browser-level-image-lazy-loading/"
+      ]
+    }
+  ],
+  "unverified_claims": [
+    {
+      "claim": "All feed image failures are due to CDN issues or hotlink protection",
+      "reason": "Some failures could be due to genuinely missing images, incorrect URLs in feeds, or CORS issues",
+      "risk_level": "low"
+    },
+    {
+      "claim": "react-image package has TypeScript support",
+      "reason": "Could not verify if @types/react-image exists or if types are bundled",
+      "risk_level": "low"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": 1,
+      "recommendation": "Implement PHP image proxy endpoint (api/feeds/image-proxy.php)",
+      "rationale": "Server-side proxying bypasses hotlink protection by fetching images from the PHP backend with appropriate headers. This is the most effective solution for hotlink protection issues.",
+      "implementation_notes": "Create new endpoint that accepts image URL, validates it, fetches via cURL with appropriate Referer/User-Agent headers, and returns the image with correct Content-Type"
+    },
+    {
+      "priority": 2,
+      "recommendation": "Add image caching layer to proxy",
+      "rationale": "Caching proxied images reduces load on both your server and the origin servers, improves performance, and prevents rate limiting issues.",
+      "implementation_notes": "Store proxied images in api/cache/images/ with URL-based hash filenames and TTL of 1-24 hours"
+    },
+    {
+      "priority": 3,
+      "recommendation": "Create reusable FeedImage React component",
+      "rationale": "Centralizes image loading logic with proper error handling, fallbacks, and loading states. Easier to maintain and test.",
+      "implementation_notes": "Component should handle: proxy URL generation, onError with graceful fallback, loading states, and optional placeholder"
+    },
+    {
+      "priority": 4,
+      "recommendation": "Use native React patterns over react-image library",
+      "rationale": "Project already uses React 19 with hooks. Native onError/useState pattern is simpler, has no dependencies, and sufficient for this use case. react-image adds bundle size for minimal benefit.",
+      "implementation_notes": "Use useState for error state, onError callback to trigger fallback, conditional rendering for placeholder"
+    },
+    {
+      "priority": 5,
+      "recommendation": "Add native lazy loading attribute",
+      "rationale": "Adding loading='lazy' to feed images improves initial page load performance with zero additional code or dependencies.",
+      "implementation_notes": "Simply add loading='lazy' to img tags in NewsWidget and any other feed components with images"
+    },
+    {
+      "priority": 6,
+      "recommendation": "Implement URL validation in proxy",
+      "rationale": "Security consideration - proxy endpoint could be abused for SSRF attacks if URLs aren't validated.",
+      "implementation_notes": "Whitelist allowed domains or at minimum validate URL format, block local/private IPs, set strict timeouts"
+    }
+  ],
+  "tech_stack_context": {
+    "frontend": {
+      "framework": "React 19.2.0",
+      "language": "TypeScript 5.9.3",
+      "bundler": "Vite 7.2.4",
+      "styling": "TailwindCSS 4.1.18"
+    },
+    "backend": {
+      "language": "PHP",
+      "pattern": "Simple REST API endpoints in api/ directory"
+    },
+    "existing_image_handling": {
+      "location": "src/components/widgets/news/NewsWidget.tsx",
+      "current_approach": "Basic onError handler that hides broken images",
+      "limitation": "Does not handle hotlink protection, no proxy, no fallback UI"
+    }
+  },
+  "created_at": "2026-01-01T12:00:00Z"
+}

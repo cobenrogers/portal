@@ -1,0 +1,34 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read(./**)",
+      "Write(./**)",
+      "Edit(./**)",
+      "Glob(./**)",
+      "Grep(./**)",
+      "Read(/Users/benjaminrogers/VSCode/BennernetLLC/agents/portal/.worktrees/001-feed-image-loading-some-feeds-have-images-that-fai/**)",
+      "Write(/Users/benjaminrogers/VSCode/BennernetLLC/agents/portal/.worktrees/001-feed-image-loading-some-feeds-have-images-that-fai/**)",
+      "Edit(/Users/benjaminrogers/VSCode/BennernetLLC/agents/portal/.worktrees/001-feed-image-loading-some-feeds-have-images-that-fai/**)",
+      "Glob(/Users/benjaminrogers/VSCode/BennernetLLC/agents/portal/.worktrees/001-feed-image-loading-some-feeds-have-images-that-fai/**)",
+      "Grep(/Users/benjaminrogers/VSCode/BennernetLLC/agents/portal/.worktrees/001-feed-image-loading-some-feeds-have-images-that-fai/**)",
+      "Read(/Users/benjaminrogers/VSCode/BennernetLLC/agents/portal/.worktrees/001-feed-image-loading-some-feeds-have-images-that-fai/.auto-claude/specs/001-feed-image-loading-some-feeds-have-images-that-fai/**)",
+      "Write(/Users/benjaminrogers/VSCode/BennernetLLC/agents/portal/.worktrees/001-feed-image-loading-some-feeds-have-images-that-fai/.auto-claude/specs/001-feed-image-loading-some-feeds-have-images-that-fai/**)",
+      "Edit(/Users/benjaminrogers/VSCode/BennernetLLC/agents/portal/.worktrees/001-feed-image-loading-some-feeds-have-images-that-fai/.auto-claude/specs/001-feed-image-loading-some-feeds-have-images-that-fai/**)",
+      "Bash(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "mcp__context7__resolve-library-id(*)",
+      "mcp__context7__get-library-docs(*)",
+      "mcp__graphiti-memory__search_nodes(*)",
+      "mcp__graphiti-memory__search_facts(*)",
+      "mcp__graphiti-memory__add_episode(*)",
+      "mcp__graphiti-memory__get_episodes(*)",
+      "mcp__graphiti-memory__get_entity_edge(*)"
+    ]
+  }
+}

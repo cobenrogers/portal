@@ -1,0 +1,44 @@
+{
+  "task_description": "Feed image loading: Implement PHP image proxy to bypass hotlink protection and create React component with graceful fallback handling",
+  "scoped_services": ["main"],
+  "files_to_modify": {
+    "main": [
+      "src/components/widgets/news/NewsWidget.tsx",
+      "src/services/api.ts",
+      "src/services/api.test.ts"
+    ]
+  },
+  "files_to_create": {
+    "main": [
+      "api/feeds/image-proxy.php",
+      "api/cache/images/.gitkeep",
+      "src/components/common/FeedImage.tsx",
+      "src/components/common/FeedImage.test.tsx"
+    ]
+  },
+  "files_to_reference": [
+    "api/feeds/recipes.php",
+    "api/feeds/fetch.php",
+    "src/services/api.ts",
+    "src/components/widgets/news/NewsWidget.tsx",
+    "src/components/ui/Button.test.tsx"
+  ],
+  "patterns": {
+    "php_curl_pattern": "Use curl_init() with CURLOPT_TIMEOUT=10, CURLOPT_CONNECTTIMEOUT=5, CURLOPT_FOLLOWLOCATION=true, CURLOPT_SSL_VERIFYPEER=true. Fallback to file_get_contents if cURL unavailable.",
+    "php_response_pattern": "Use respond($success, $data, $error) function with JSON Content-Type header. Return {success: bool, data: any, error: string}.",
+    "api_url_pattern": "Use API_BASE constant (import.meta.env.DEV ? '/api' : './api'). Always use encodeURIComponent() for query parameters.",
+    "component_test_pattern": "Use Vitest with describe/it/expect. Use @testing-library/react for render/screen/fireEvent. Mock fetch with vi.mocked().",
+    "image_error_handling": "NewsWidget currently uses onError to set display:none. New pattern should use useState for proper fallback rendering."
+  },
+  "existing_implementations": {
+    "cache_directory": "api/cache/ exists with JSON cache files. Need to create api/cache/images/ subdirectory.",
+    "curl_implementation": "api/feeds/recipes.php has complete fetchUrl() function with cURL and fallback patterns.",
+    "rss_image_extraction": "api/feeds/fetch.php has getImageFromItem() that extracts images from feed items."
+  },
+  "tech_stack": {
+    "frontend": ["React", "TypeScript", "Vite", "Tailwind CSS"],
+    "backend": ["PHP"],
+    "testing": ["Vitest", "@testing-library/react"]
+  },
+  "created_at": "2026-01-01T12:35:00.000Z"
+}

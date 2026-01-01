@@ -1,0 +1,71 @@
+{
+  "complexity": "standard",
+  "workflow_type": "feature",
+  "confidence": 0.85,
+  "reasoning": "This is a feature to add an image proxy layer for feed images. It requires modifying 3-5 files (new PHP proxy endpoint, NewsWidget frontend changes, possible type updates), but follows well-understood patterns that already exist in the codebase. The PHP backend already fetches external content with proper headers.",
+
+  "analysis": {
+    "scope": {
+      "estimated_files": 4,
+      "estimated_services": 1,
+      "is_cross_cutting": false,
+      "notes": "Changes contained to: new image-proxy.php endpoint, NewsWidget.tsx for frontend usage, possibly api.ts for new service call. Monolithic app with React frontend + PHP backend."
+    },
+    "integrations": {
+      "external_services": [],
+      "new_dependencies": [],
+      "research_needed": true,
+      "notes": "No new external services. Research needed for: correct HTTP headers to bypass hotlink protection, caching strategy, URL validation for security (SSRF prevention)."
+    },
+    "infrastructure": {
+      "docker_changes": false,
+      "database_changes": false,
+      "config_changes": false,
+      "notes": "No infrastructure changes needed. PHP can handle image proxying. May need a cache directory but that's minimal configuration."
+    },
+    "knowledge": {
+      "patterns_exist": true,
+      "research_required": true,
+      "unfamiliar_tech": [],
+      "notes": "Existing patterns in fetch.php for HTTP fetching with proper headers. Research needed for: proper proxy headers, image caching best practices, handling various image formats/sizes."
+    },
+    "risk": {
+      "level": "medium",
+      "concerns": [
+        "Security: URL validation to prevent SSRF attacks",
+        "Performance: Proxying all images through server adds latency",
+        "Storage: If caching images, need to manage disk space",
+        "Edge cases: Various image formats, sizes, redirects"
+      ],
+      "notes": "Need careful URL validation to only proxy legitimate image URLs. Should implement caching to mitigate performance concerns."
+    }
+  },
+
+  "recommended_phases": [
+    "discovery",
+    "requirements",
+    "research",
+    "context",
+    "spec_writing",
+    "planning",
+    "validation"
+  ],
+
+  "flags": {
+    "needs_research": true,
+    "needs_self_critique": false,
+    "needs_infrastructure_setup": false
+  },
+
+  "validation_recommendations": {
+    "risk_level": "medium",
+    "skip_validation": false,
+    "minimal_mode": false,
+    "test_types_required": ["unit", "integration"],
+    "security_scan_required": true,
+    "staging_deployment_required": false,
+    "reasoning": "Image proxy endpoint requires security review for SSRF prevention. Unit tests for URL validation logic, integration tests for proxy functionality. Security scan needed because the endpoint will make server-side requests to external URLs."
+  },
+
+  "created_at": "2026-01-01T12:30:00.000Z"
+}

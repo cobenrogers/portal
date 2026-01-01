@@ -1,0 +1,25 @@
+{
+  "active": true,
+  "spec": "001-feed-image-loading-some-feeds-have-images-that-fai",
+  "state": "building",
+  "subtasks": {
+    "completed": 0,
+    "total": 10,
+    "in_progress": 1,
+    "failed": 0
+  },
+  "phase": {
+    "current": "Backend Infrastructure",
+    "id": null,
+    "total": 1
+  },
+  "workers": {
+    "active": 0,
+    "max": 1
+  },
+  "session": {
+    "number": 1,
+    "started_at": "2026-01-01T12:37:15.584005"
+  },
+  "last_update": "2026-01-01T12:37:15.588144"
+}
