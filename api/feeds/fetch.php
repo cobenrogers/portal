@@ -76,7 +76,7 @@ function getImageFromItem($item, $namespaces) {
         return $matches[1];
     }
 
-    // Try content:encoded for embedded images
+    // Try content:encoded for embedded images (WordPress standard)
     if (isset($namespaces['content'])) {
         $content = $item->children($namespaces['content']);
         if (isset($content->encoded)) {
@@ -84,6 +84,15 @@ function getImageFromItem($item, $namespaces) {
             if (preg_match('/<img[^>]+src=["\']([^"\']+)["\']/', $encoded, $matches)) {
                 return $matches[1];
             }
+        }
+    }
+
+    // Fallback: try direct content:encoded access (different XML parsing)
+    $contentEncoded = $item->children('http://purl.org/rss/1.0/modules/content/');
+    if (isset($contentEncoded->encoded)) {
+        $encoded = (string)$contentEncoded->encoded;
+        if (preg_match('/<img[^>]+src=["\']([^"\']+)["\']/', $encoded, $matches)) {
+            return $matches[1];
         }
     }
 
