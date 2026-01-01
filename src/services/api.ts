@@ -177,18 +177,146 @@ export async function fetchTriviaData(): Promise<TriviaData> {
   return response.data.trivia
 }
 
-// Bitcoin Mining API (public-pool.io)
+// Bitcoin Mining API (public-pool.io) - Direct frontend fetch
+const PUBLIC_POOL_API = 'https://public-pool.io:40557/api'
+const PUBLIC_POOL_WEB = 'https://web.public-pool.io/#/app'
+
+// Raw API response types from public-pool.io
+interface PublicPoolNetworkResponse {
+  blocks: number
+  currentblockweight: number
+  currentblocktx: number
+  difficulty: number
+  networkhashps: number
+  pooledtx: number
+  chain: string
+  warnings?: string[]
+}
+
+interface PublicPoolWorker {
+  sessionId: string
+  name: string
+  bestDifficulty: string
+  hashRate: string
+  startTime: string
+  lastSeen: string
+}
+
+interface PublicPoolClientResponse {
+  bestDifficulty: string
+  workersCount: number
+  workers: PublicPoolWorker[]
+}
+
+// Utility: Format hashrate to human-readable string
+function formatHashrate(hashrate: number): string {
+  if (hashrate >= 1e15) return `${(hashrate / 1e15).toFixed(2)} PH/s`
+  if (hashrate >= 1e12) return `${(hashrate / 1e12).toFixed(2)} TH/s`
+  if (hashrate >= 1e9) return `${(hashrate / 1e9).toFixed(2)} GH/s`
+  if (hashrate >= 1e6) return `${(hashrate / 1e6).toFixed(2)} MH/s`
+  if (hashrate >= 1e3) return `${(hashrate / 1e3).toFixed(2)} KH/s`
+  return `${hashrate.toFixed(2)} H/s`
+}
+
+// Utility: Calculate "time ago" string
+function getTimeAgo(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffSecs = Math.floor(diffMs / 1000)
+  const diffMins = Math.floor(diffSecs / 60)
+  const diffHours = Math.floor(diffMins / 60)
+  const diffDays = Math.floor(diffHours / 24)
+
+  if (diffSecs < 60) return 'just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  return `${diffDays}d ago`
+}
+
+// Utility: Check if worker is online (seen within last 5 minutes)
+function isWorkerOnline(lastSeen: string): boolean {
+  const lastSeenDate = new Date(lastSeen)
+  const now = new Date()
+  const diffMs = now.getTime() - lastSeenDate.getTime()
+  return diffMs < 5 * 60 * 1000 // 5 minutes
+}
+
+// Utility: Shorten wallet address for display
+function shortenWallet(wallet: string): string {
+  if (wallet.length <= 12) return wallet
+  return `${wallet.slice(0, 6)}...${wallet.slice(-4)}`
+}
+
 export async function fetchBitcoinMiningData(walletAddress: string): Promise<BitcoinMiningData> {
   if (!walletAddress.trim()) {
     throw new Error('Wallet address is required')
   }
-  const response = await fetchApi<ApiResponse<BitcoinMiningData>>(
-    `/feeds/bitcoin-mining.php?wallet=${encodeURIComponent(walletAddress)}`
-  )
-  if (!response.success || !response.data) {
-    throw new Error(response.error || 'Failed to fetch mining data')
+
+  // Fetch both endpoints in parallel
+  const [clientResponse, networkResponse] = await Promise.all([
+    fetch(`${PUBLIC_POOL_API}/client/${encodeURIComponent(walletAddress)}`),
+    fetch(`${PUBLIC_POOL_API}/network`)
+  ])
+
+  if (!clientResponse.ok) {
+    if (clientResponse.status === 404) {
+      throw new Error('Wallet not found on Public Pool')
+    }
+    throw new Error(`Failed to fetch mining data: ${clientResponse.status}`)
   }
-  return response.data
+
+  const clientData: PublicPoolClientResponse = await clientResponse.json()
+
+  // Network data is optional (for pool stats)
+  let networkData: PublicPoolNetworkResponse | null = null
+  if (networkResponse.ok) {
+    networkData = await networkResponse.json()
+  }
+
+  // Transform workers
+  const workers = clientData.workers.map(worker => {
+    const hashrate = parseFloat(worker.hashRate) || 0
+    return {
+      name: worker.name,
+      sessionId: worker.sessionId,
+      hashrate,
+      hashrateFormatted: formatHashrate(hashrate),
+      bestDifficulty: parseFloat(worker.bestDifficulty) || 0,
+      startTime: worker.startTime,
+      lastSeen: worker.lastSeen,
+      lastSeenAgo: getTimeAgo(worker.lastSeen),
+      isOnline: isWorkerOnline(worker.lastSeen)
+    }
+  })
+
+  // Calculate total hashrate
+  const totalHashrate = workers.reduce((sum, w) => sum + w.hashrate, 0)
+
+  // Build the response
+  const result: BitcoinMiningData = {
+    wallet: walletAddress,
+    walletShort: shortenWallet(walletAddress),
+    bestDifficulty: parseFloat(clientData.bestDifficulty) || 0,
+    workersCount: clientData.workersCount,
+    totalHashrate,
+    totalHashrateFormatted: formatHashrate(totalHashrate),
+    workers,
+    poolUrl: `${PUBLIC_POOL_WEB}/${walletAddress}`
+  }
+
+  // Add pool stats if network data available
+  if (networkData) {
+    result.pool = {
+      totalHashrate: networkData.networkhashps,
+      totalHashrateFormatted: formatHashrate(networkData.networkhashps),
+      totalMiners: 0, // Not available from this endpoint
+      blockHeight: networkData.blocks,
+      fee: 0 // Not available from this endpoint
+    }
+  }
+
+  return result
 }
 
 // Image Proxy API - Bypasses hotlink protection for feed images

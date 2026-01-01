@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { fetchFeed, fetchWeather, getSettings, saveSettings, getProxiedImageUrl } from './api'
+import { fetchFeed, fetchWeather, getSettings, saveSettings, getProxiedImageUrl, fetchBitcoinMiningData } from './api'
 
 describe('API Service', () => {
   beforeEach(() => {
@@ -190,6 +190,97 @@ describe('API Service', () => {
       const imageUrl = 'https://example.com/my image.jpg'
       const result = getProxiedImageUrl(imageUrl)
       expect(result).toContain(encodeURIComponent(imageUrl))
+    })
+  })
+
+  describe('fetchBitcoinMiningData', () => {
+    it('throws error for empty wallet address', async () => {
+      await expect(fetchBitcoinMiningData('')).rejects.toThrow('Wallet address is required')
+      await expect(fetchBitcoinMiningData('   ')).rejects.toThrow('Wallet address is required')
+    })
+
+    it('fetches and transforms mining data correctly', async () => {
+      const mockClientData = {
+        bestDifficulty: '828.54',
+        workersCount: 1,
+        workers: [{
+          sessionId: 'abc123',
+          name: 'miner1',
+          bestDifficulty: '2.33',
+          hashRate: '1000000',
+          startTime: '2024-01-01T00:00:00Z',
+          lastSeen: new Date().toISOString() // Current time = online
+        }]
+      }
+
+      const mockNetworkData = {
+        blocks: 930480,
+        currentblockweight: 1286193,
+        currentblocktx: 1205,
+        difficulty: 148258433855481.3,
+        networkhashps: 1.154466466352633e21,
+        pooledtx: 34,
+        chain: 'main'
+      }
+
+      // Mock both API calls
+      vi.mocked(fetch)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockClientData,
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockNetworkData,
+        } as Response)
+
+      const result = await fetchBitcoinMiningData('testWallet123')
+
+      expect(result.wallet).toBe('testWallet123')
+      expect(result.bestDifficulty).toBe(828.54)
+      expect(result.workersCount).toBe(1)
+      expect(result.workers).toHaveLength(1)
+      expect(result.workers[0].name).toBe('miner1')
+      expect(result.workers[0].hashrate).toBe(1000000)
+      expect(result.workers[0].hashrateFormatted).toBe('1.00 MH/s')
+      expect(result.workers[0].isOnline).toBe(true)
+      expect(result.pool?.blockHeight).toBe(930480)
+      expect(result.poolUrl).toContain('testWallet123')
+    })
+
+    it('handles 404 error for unknown wallet', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({}),
+      } as Response)
+
+      await expect(fetchBitcoinMiningData('unknownWallet')).rejects.toThrow('Wallet not found on Public Pool')
+    })
+
+    it('handles network data fetch failure gracefully', async () => {
+      const mockClientData = {
+        bestDifficulty: '100',
+        workersCount: 0,
+        workers: []
+      }
+
+      vi.mocked(fetch)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockClientData,
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          json: async () => ({}),
+        } as Response)
+
+      const result = await fetchBitcoinMiningData('testWallet')
+
+      // Should still work, just without pool stats
+      expect(result.wallet).toBe('testWallet')
+      expect(result.pool).toBeUndefined()
     })
   })
 })
